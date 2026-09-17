@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sortes — six scriptures, opened at random</title>
+<meta name="description" content="The Old and New Testaments, the Quran, the Book of Mormon, the Bhagavad Gita and the Pali Canon, all open at a random passage at once.">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'&gt;&lt;rect width='16' height='16' fill='%23e3e1d8'/&gt;&lt;rect x='3' y='7' width='10' height='2' fill='%23a32b1b'/&gt;&lt;/svg&gt;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<main id="grid" class="grid" data-mode="all" aria-label="Scriptures"></main>
+
+<div class="bar">
+  <p class="wordmark">Sortes</p>
+  <nav class="books" id="books" aria-label="What to open"></nav>
+  <div class="act">
+    <button id="jump" class="jump" type="button">Open at random</button>
+    <span class="hint">or press <kbd>R</kbd></span>
+  </div>
+  <button id="sources-toggle" class="plain" type="button" aria-expanded="false" aria-controls="sources">Sources</button>
+</div>
+
+<aside id="sources" class="sources" hidden>
+  <div class="sources-inner">
+    <button id="sources-close" class="plain close" type="button">Close</button>
+    <h2>Six scriptures, opened at random</h2>
+    <p class="lede">Every book here falls open on a passage chosen at random.
+    Whatever passage sits on a column's reading line keeps its ink; the rest of
+    the page fades around it. Scroll a column to move its light, or open all six
+    somewhere new.</p>
+    <dl id="sources-list"></dl>
+    <p class="colophon">Every translation here is public domain or CC0. Nothing is
+    edited beyond joining the hard-wrapped lines of the source files back into
+    paragraphs.</p>
+  </div>
+</aside>
+
+<script src="app.js"></script>
+</body>
+</html>

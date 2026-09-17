@@ -1,0 +1,401 @@
+/* Rubrication: the body is ink, the references are red, nothing else has a
+   color. Focus is spent entirely on the ink/fade ramp. */
+:root {
+  --ground: #e3e1d8;
+  --ground-bar: #d7d4c8;
+  --ink: #1d2026;
+  --fade-1: #71747a;
+  --fade-2: #969791;
+  --fade-3: #b3b1a7;
+  --rubric: #a32b1b;
+  --rule: #c3bfb1;
+
+  --measure: 34rem;
+  --margin-gutter: 12.5rem; /* running head plus its gap, in one-book mode */
+  --bar-height: 4.25rem;
+  --landing: 34%; /* matches LANDING in app.js */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #171a1b;
+    --ground-bar: #1f2325;
+    --ink: #e9e5da;
+    --fade-1: #85837c;
+    --fade-2: #63615c;
+    --fade-3: #454440;
+    --rubric: #d65c42;
+    --rule: #2f3335;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  height: 100svh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: Spectral, 'Iowan Old Style', Palatino, 'Palatino Linotype', Georgia, serif;
+  font-weight: 300;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- the spread ------------------------------------------------------ */
+
+.grid {
+  display: grid;
+  align-content: start;
+  overflow: hidden;
+}
+
+.grid[data-flow='stacked'] {
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+}
+
+/* Too narrow to lay the books out flat: one screenful of columns at a time. */
+.grid[data-flow='across'] {
+  grid-auto-flow: column;
+  grid-auto-columns: calc(100% / var(--cols, 1));
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  /* Leave the platform scrollbar in place: it is the only sign that there are
+     more books to the right. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.grid[data-flow='across'] .column { scroll-snap-align: start; }
+.grid[data-flow='across'] .column:first-child { border-left: 0; }
+
+.column {
+  height: var(--col-height, 100%);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-left: 1px solid var(--rule);
+}
+
+/* A polyglot is ruled between its columns but not down its outer edge, so the
+   first column of each row loses the rule and later rows gain a top one. */
+.grid[data-flow='stacked'][data-cols='1'] .column,
+.grid[data-flow='stacked'][data-cols='2'] .column:nth-child(2n + 1),
+.grid[data-flow='stacked'][data-cols='3'] .column:nth-child(3n + 1),
+.grid[data-flow='stacked'][data-cols='4'] .column:nth-child(4n + 1),
+.grid[data-flow='stacked'][data-cols='5'] .column:nth-child(5n + 1),
+.grid[data-flow='stacked'][data-cols='6'] .column:nth-child(6n + 1) { border-left: 0; }
+
+.grid[data-flow='stacked'][data-cols='1'] .column + .column,
+.grid[data-flow='stacked'][data-cols='2'] .column:nth-child(n + 3),
+.grid[data-flow='stacked'][data-cols='3'] .column:nth-child(n + 4),
+.grid[data-flow='stacked'][data-cols='4'] .column:nth-child(n + 5),
+.grid[data-flow='stacked'][data-cols='5'] .column:nth-child(n + 6) {
+  border-top: 1px solid var(--rule);
+}
+
+/* Fixed height, so the reading line runs level right across the spread even
+   when one book's citation needs two lines and its neighbours need one. */
+.head {
+  flex: 0 0 auto;
+  height: 5.4rem;
+  overflow: hidden;
+  padding: 1.1rem 1.25rem 0.9rem;
+}
+
+.head-book {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.head-ref {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--rubric);
+  text-wrap: pretty;
+}
+
+.stream {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  /* The page does not end at the column edge, it thins out into it. */
+  mask-image: linear-gradient(to bottom,
+    transparent, #000 2.5rem, #000 calc(100% - 3rem), transparent);
+}
+
+/* Room below the last paragraph so it too can reach the reading line. */
+.stream::after {
+  content: '';
+  display: block;
+  height: 62%;
+}
+
+.page {
+  /* extend() compensates the scroll itself when it prepends; let it. */
+  overflow-anchor: none;
+  font-size: 0.9rem;
+}
+
+/* Every passage starts faded. The reading line lifts one back to full ink and
+   its neighbors partway, so the column falls off in both directions. */
+.para {
+  margin: 0 0 1.35em;
+  color: var(--fade-3);
+  /* Verse keeps its line breaks; prose has none to keep. */
+  white-space: pre-line;
+  transition: color 420ms ease;
+}
+
+.para.n2 { color: var(--fade-2); }
+.para.n1 { color: var(--fade-1); }
+
+.para.lit {
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* The one piece of motion in the app: on landing, the ink soaks in. */
+.para.arrived { animation: soak 620ms ease-out; }
+
+@keyframes soak {
+  from { color: var(--fade-3); }
+}
+
+.edge {
+  margin: 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--fade-2);
+}
+
+/* ---- one book, full width -------------------------------------------- */
+
+.grid[data-mode='one'] .head-book { font-size: 1rem; }
+
+/* Without room for a margin the head sits over the text, aligned to it. */
+.grid[data-mode='one'] .head {
+  width: 100%;
+  max-width: calc(var(--measure) + 2.5rem);
+  height: auto;
+  margin-inline: auto;
+}
+
+.grid[data-mode='one'] .head-ref { -webkit-line-clamp: 3; }
+
+.grid[data-mode='one'] .page,
+.grid[data-mode='one'] .edge {
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: 1.05rem;
+}
+
+/* Given the room, the running head hangs in the margin at the reading line,
+   level with the passage it names. */
+@media (min-width: 66rem) {
+  .grid[data-mode='one'] .head {
+    position: absolute;
+    z-index: 1;
+    top: var(--landing);
+    /* Level with the passage, and left of it by the gutter. */
+    right: calc(50% + var(--measure) / 2 + 1.5rem - var(--margin-gutter) / 2);
+    width: 11rem;
+    padding: 0;
+    text-align: right;
+  }
+
+  /* Reserve the gutter so head and text sit centered as one block. */
+  .grid[data-mode='one'] .stream {
+    padding-top: 1.1rem;
+    padding-left: calc(1.25rem + var(--margin-gutter));
+  }
+}
+
+/* ---- controls -------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 1.5rem;
+  flex-wrap: wrap;
+  min-height: var(--bar-height);
+  padding: 0.6rem 1.25rem;
+  background: var(--ground-bar);
+  border-top: 1px solid var(--rule);
+  font-size: 1rem;
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--rubric);
+}
+
+.books {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.1rem;
+  flex: 1 1 auto;
+}
+
+.books button {
+  padding: 0.15rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--fade-2);
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.books button:hover { color: var(--fade-1); }
+
+.books button[aria-pressed='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--rubric);
+}
+
+.act {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+}
+
+.jump {
+  padding: 0.5rem 1.35rem;
+  border: 1px solid var(--rubric);
+  background: var(--rubric);
+  color: var(--ground);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.jump:hover {
+  background: transparent;
+  color: var(--rubric);
+}
+
+.hint {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--fade-2);
+}
+
+kbd {
+  font: inherit;
+  font-style: normal;
+  border-bottom: 1px solid var(--fade-3);
+}
+
+.plain {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--fade-2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.plain:hover { color: var(--rubric); }
+
+#sources-toggle { margin-left: auto; }
+
+:focus-visible {
+  outline: 2px solid var(--rubric);
+  outline-offset: 3px;
+}
+
+@media (max-width: 58rem) {
+  .wordmark { display: none; }
+  .books { order: 3; flex-basis: 100%; }
+  .hint { display: none; }
+}
+
+/* ---- sources --------------------------------------------------------- */
+
+.sources {
+  position: fixed;
+  inset: auto 0 var(--bar-height) 0;
+  z-index: 30;
+  max-height: 72svh;
+  overflow-y: auto;
+  padding: 2rem 1.25rem 2.5rem;
+  background: var(--ground-bar);
+  border-top: 1px solid var(--rule);
+}
+
+.sources-inner {
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: 1.05rem;
+}
+
+.sources h2 {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 400;
+}
+
+.lede {
+  margin: 0 0 2rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--fade-1);
+}
+
+.sources dl { margin: 0; }
+
+.sources dt {
+  margin-top: 1.1rem;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.sources dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--fade-1);
+}
+
+.colophon {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--fade-2);
+}
+
+.close { float: right; margin-left: 1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .para { transition: none; }
+  .para.arrived { animation: none; }
+}

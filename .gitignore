@@ -1,0 +1,5 @@
+# Downloaded and unpacked sources. scripts/fetch_sources.sh refills this.
+tmp/
+
+# Python bytecode
+__pycache__/

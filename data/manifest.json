@@ -1,0 +1,64 @@
+{
+ "texts": [
+  {
+   "id": "old-testament",
+   "title": "The Old Testament",
+   "short": "Old Testament",
+   "subtitle": "King James Version",
+   "source": "github.com/aruljohn/Bible-kjv",
+   "license": "Public domain (King James Version, 1611/1769)",
+   "count": 23145,
+   "chunk": 400
+  },
+  {
+   "id": "new-testament",
+   "title": "The New Testament",
+   "short": "New Testament",
+   "subtitle": "King James Version",
+   "source": "github.com/aruljohn/Bible-kjv",
+   "license": "Public domain (King James Version, 1611/1769)",
+   "count": 7957,
+   "chunk": 400
+  },
+  {
+   "id": "quran",
+   "title": "The Quran",
+   "short": "Quran",
+   "subtitle": "Translated by Marmaduke Pickthall",
+   "source": "quran.com API (translation id 19)",
+   "license": "Public domain (Pickthall translation, 1930)",
+   "count": 6236,
+   "chunk": 400
+  },
+  {
+   "id": "book-of-mormon",
+   "title": "The Book of Mormon",
+   "short": "Book of Mormon",
+   "subtitle": "Another Testament of Jesus Christ",
+   "source": "Project Gutenberg eBook #17",
+   "license": "Public domain",
+   "count": 6598,
+   "chunk": 400
+  },
+  {
+   "id": "bhagavad-gita",
+   "title": "The Bhagavad Gita",
+   "short": "Bhagavad Gita",
+   "subtitle": "The Song Celestial, translated by Sir Edwin Arnold",
+   "source": "Project Gutenberg eBook #2388",
+   "license": "Public domain (The Song Celestial, Sir Edwin Arnold, 1885)",
+   "count": 245,
+   "chunk": 400
+  },
+  {
+   "id": "tripitaka",
+   "title": "The Pali Canon (Tipitaka)",
+   "short": "Pali Canon",
+   "subtitle": "Translated by Bhikkhu Sujato and Bhikkhu Brahmali",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta, Abhidhamma) and Bhikkhu Brahmali (Vinaya)",
+   "count": 56270,
+   "chunk": 400
+  }
+ ]
+}
