@@ -3,3 +3,6 @@ tmp/
 
 # Python bytecode
 __pycache__/
+
+# Session scratch from the editor.
+.claude/
