@@ -10,8 +10,25 @@
   --rubric: #a32b1b;
   --rule: #c3bfb1;
 
+  /* Three illuminator's pigments, in fixed slots, taken as saturated as the
+     checks allow: a search over OKLCH hue/lightness for the highest common
+     chroma that still clears every gate. Validated all-pairs against this
+     app's own grounds, not a generic surface:
+     CVD dE 11.0, normal-vision dE 21.8, contrast 4.4/3.1/4.9. */
+  --law: #0168b4;       /* azurite */
+  --promise: #a77601;   /* orpiment */
+  --threat: #bd004b;    /* madder */
+  /* Doctrine and worship are coloured on the statistics screen only, where
+     every bar is named in its row and hovering a kind isolates it everywhere.
+     Five hues cannot be made safe for every kind of colour blindness — this
+     pair sits below the CVD floor — so that isolate, not the hue, is what
+     carries identity there. In the margins only the three above are used. */
+  --violence: #b8440a;  /* realgar */
+  --doctrine: #177a63;  /* verdigris */
+  --worship: #82358f;   /* Tyrian purple */
+
   --measure: 34rem;
-  --margin-gutter: 12.5rem; /* running head plus its gap, in one-book mode */
+  --margin-gutter: 14.5rem; /* running head, mark strip and their gaps */
   --bar-height: 4.25rem;
   --landing: 34%; /* matches LANDING in app.js */
 }
@@ -26,6 +43,14 @@
     --fade-3: #454440;
     --rubric: #d65c42;
     --rule: #2f3335;
+    /* CVD dE 11.4, normal-vision dE 23.6, contrast 3.8/5.3/3.3. The old
+       threat was a pale pink here; madder is a red. */
+    --law: #0077cd;
+    --promise: #ba8400;
+    --threat: #d60056;
+    --violence: #e2622a;
+    --doctrine: #1f9c7e;
+    --worship: #b062c4;
   }
 }
 
@@ -109,10 +134,26 @@ body {
 }
 
 .head-book {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
   margin: 0;
   font-size: 0.9rem;
   font-weight: 400;
   line-height: 1.3;
+}
+
+/* Which of the four non-rule kinds the lit passage is. */
+.head-form {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-style: italic;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--fade-2);
 }
 
 .head-ref {
@@ -134,7 +175,8 @@ body {
   position: relative;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 1.25rem;
+  /* The extra room on the left is the margin the marks hang in. */
+  padding: 0 1.25rem 0 2.9rem;
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
   /* The page does not end at the column edge, it thins out into it. */
@@ -158,6 +200,7 @@ body {
 /* Every passage starts faded. The reading line lifts one back to full ink and
    its neighbors partway, so the column falls off in both directions. */
 .para {
+  position: relative;
   margin: 0 0 1.35em;
   color: var(--fade-3);
   /* Verse keeps its line breaks; prose has none to keep. */
@@ -172,6 +215,36 @@ body {
   color: var(--ink);
   font-weight: 400;
 }
+
+/* Marginal marks: what the passage does. Three fixed slots, so a lone rule's
+   indent already says which one it is before you reach for the legend.
+   Rules rather than dots: a 6px dot is too small a swatch to judge a hue by,
+   and a passage's own height is free colour area nobody was using. */
+.marks {
+  position: absolute;
+  right: 100%;
+  top: 0.3em;
+  bottom: 0.3em;
+  margin-right: 0.65rem;
+  display: flex;
+  gap: 3px;
+}
+
+.rule {
+  width: 3px;
+  border-radius: 1.5px;
+}
+
+.rule[data-code='L'] { background: var(--law); }
+.rule[data-code='P'] { background: var(--promise); }
+.rule[data-code='T'] { background: var(--threat); }
+.rule[data-code='V'] { background: var(--violence); }
+.rule[data-code='D'] { background: var(--doctrine); }
+
+/* Faded passages carry faded marks, so the reading line still leads. */
+.para .rule { opacity: 0.62; transition: opacity 420ms ease; }
+.para.n1 .rule { opacity: 0.82; }
+.para.lit .rule { opacity: 1; }
 
 /* The one piece of motion in the app: on landing, the ink soaks in. */
 .para.arrived { animation: soak 620ms ease-out; }
@@ -215,12 +288,16 @@ body {
     position: absolute;
     z-index: 1;
     top: var(--landing);
-    /* Level with the passage, and left of it by the gutter. */
-    right: calc(50% + var(--measure) / 2 + 1.5rem - var(--margin-gutter) / 2);
-    width: 11rem;
+    /* Level with the passage, and clear of the mark strip beside it. */
+    right: calc(50% + var(--measure) / 2 + 3.6rem - var(--margin-gutter) / 2);
+    width: 10.5rem;
     padding: 0;
     text-align: right;
   }
+
+  /* The margin is narrow but tall: stack the head rather than ellipsize it. */
+  .grid[data-mode='one'] .head-book { display: block; }
+  .grid[data-mode='one'] .head-form { display: block; margin-top: 0.15rem; }
 
   /* Reserve the gutter so head and text sit centered as one block. */
   .grid[data-mode='one'] .stream {
@@ -299,11 +376,38 @@ body {
   color: var(--rubric);
 }
 
-.hint {
-  font-size: 0.8rem;
-  font-style: italic;
-  color: var(--fade-2);
+/* The legend is not optional: it is the other half of the marks' meaning,
+   so its swatch is the same rule, drawn a little larger to be read once. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--fade-1);
 }
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legend li::before {
+  content: '';
+  width: 4px;
+  height: 1.15em;
+  border-radius: 2px;
+  background: var(--mark);
+}
+
+.legend li:nth-child(1) { --mark: var(--law); }
+.legend li:nth-child(2) { --mark: var(--promise); }
+.legend li:nth-child(3) { --mark: var(--threat); }
+.legend li:nth-child(4) { --mark: var(--violence); }
+.legend li:nth-child(5) { --mark: var(--doctrine); }
 
 kbd {
   font: inherit;
@@ -334,7 +438,7 @@ kbd {
 @media (max-width: 58rem) {
   .wordmark { display: none; }
   .books { order: 3; flex-basis: 100%; }
-  .hint { display: none; }
+  .legend { order: 4; }
 }
 
 /* ---- sources --------------------------------------------------------- */
@@ -384,6 +488,8 @@ kbd {
   color: var(--fade-1);
 }
 
+.sub { margin-top: 2.5rem; }
+
 .colophon {
   margin-top: 2rem;
   padding-top: 1.2rem;
@@ -399,3 +505,232 @@ kbd {
   .para { transition: none; }
   .para.arrived { animation: none; }
 }
+
+/* Statistics: a full screen, one column per book, everything aligned so the
+   books can be read against each other rather than one at a time. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: auto;
+  background: var(--ground);
+}
+
+.screen-inner {
+  min-height: 100%;
+  padding: 1.6rem clamp(1rem, 3vw, 2.75rem) 2.5rem;
+}
+
+.screen-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.screen-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.screen .lede { max-width: 46rem; margin-bottom: 1.75rem; }
+
+.matrix {
+  display: grid;
+  grid-template-columns: max-content repeat(var(--books), minmax(0, 1fr));
+  align-items: start;
+  gap: 0.3rem 2.25rem;
+}
+
+/* The maps sit on a common baseline just above the bars — their heights still
+   say how long each book is, without leaving a void over the short ones. */
+.book {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.book b {
+  display: block;
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.book span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--fade-2);
+}
+
+/* One pixel per passage. The canvas is sized in script to roughly a square and
+   never wider than its column, then scaled up to fill that column without
+   smoothing — so a short book keeps big square pixels and a long one lands at
+   1:1. Upscaling only: nothing is ever resampled away. */
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: auto;
+  margin-bottom: 1.4rem;
+  image-rendering: pixelated;
+}
+
+.kind {
+  align-self: center;
+  padding-right: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--fade-1);
+}
+
+.kind[data-code] { color: var(--ink); }
+
+.kind[data-code]::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 0.8em;
+  margin-right: 0.45rem;
+  border-radius: 2px;
+  vertical-align: -0.05em;
+  background: var(--mark);
+}
+
+.kind[data-code='L'] { --mark: var(--law); }
+.kind[data-code='P'] { --mark: var(--promise); }
+.kind[data-code='T'] { --mark: var(--threat); }
+.kind[data-code='V'] { --mark: var(--violence); }
+.kind[data-code='D'] { --mark: var(--doctrine); }
+.kind[data-code='W'] { --mark: var(--worship); }
+
+/* The number sits at the end of its own bar, not at the right edge of the
+   cell: pinned to the edge it ends up nearer the next book's bar than its own,
+   and reads as labelling that one. The bar is scaled against the column minus
+   the label, so the longest one still leaves room for it. */
+.cell {
+  --figure: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.18rem 0;
+}
+
+/* Not `.bar` — that is the toolbar at the foot of the page. */
+.share {
+  height: 8px;
+  min-width: 1px;
+  flex: none;
+  border-radius: 1px;
+  background: var(--fade-2);
+}
+
+.share[data-code='L'] { background: var(--law); }
+.share[data-code='P'] { background: var(--promise); }
+.share[data-code='T'] { background: var(--threat); }
+.share[data-code='V'] { background: var(--violence); }
+.share[data-code='D'] { background: var(--doctrine); }
+.share[data-code='W'] { background: var(--worship); }
+
+.cell b {
+  flex: none;
+  font-weight: 400;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--fade-1);
+}
+
+.kind.quiet, .cell.quiet b {
+  padding-top: 0.5rem;
+  color: var(--fade-2);
+  font-style: italic;
+}
+
+.screen .colophon { margin-top: 2rem; }
+
+/* On a narrow screen the six columns are scrolled to rather than dropped —
+   hiding five of the six books would defeat the comparison. The kind labels
+   stay put so a row keeps its name while the books slide past. */
+@media (max-width: 52rem) {
+  .screen-inner { padding-inline: 0; }
+  .screen-head, .screen .lede, .screen .colophon {
+    padding-inline: 1rem;
+  }
+  .matrix {
+    grid-template-columns: max-content repeat(var(--books), 8.5rem);
+    overflow-x: auto;
+    padding-inline: 1rem;
+    overscroll-behavior-x: contain;
+  }
+  .corner, .kind {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--ground);
+  }
+}
+
+/* Isolating a kind. Colour alone cannot separate five hues for every kind of
+   colour blindness, so hovering or focusing a row is the real encoding: the
+   chosen kind stays put and everything else recedes, which reads the same in
+   black and white as in colour. */
+.kind {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.kind:hover, .kind:focus-visible { color: var(--ink); }
+.kind:focus-visible { outline: 2px solid var(--rubric); outline-offset: 2px; }
+
+.matrix[data-isolate] .share,
+.matrix[data-isolate] .cell b,
+.matrix[data-isolate] .kind { opacity: 0.25; }
+
+.matrix[data-isolate] .row-on .share,
+.matrix[data-isolate] .row-on b,
+.matrix[data-isolate] .kind.row-on { opacity: 1; }
+
+.matrix[data-isolate] .kind.row-on { font-style: normal; color: var(--ink); }
+
+/* Reading one pixel. Follows the cursor, so it is kept narrow enough to stay
+   out of the way of the map it is pointing at. */
+.peek {
+  position: fixed;
+  z-index: 50;
+  max-width: 24rem;
+  padding: 0.7rem 0.85rem;
+  pointer-events: none;
+  background: var(--ground-bar);
+  border: 1px solid var(--rule);
+  box-shadow: 0 2px 14px rgb(0 0 0 / 0.14);
+}
+
+.peek-ref {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--rubric);
+}
+
+.peek-body {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink);
+  /* Long passages get cut rather than filling the screen. */
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.map { cursor: crosshair; }

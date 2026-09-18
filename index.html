@@ -18,12 +18,43 @@
 <div class="bar">
   <p class="wordmark">Sortes</p>
   <nav class="books" id="books" aria-label="What to open"></nav>
+  <ul class="legend" aria-label="What the marginal marks mean">
+    <li>Law</li>
+    <li>Promise</li>
+    <li>Threat</li>
+    <li>Violence</li>
+    <li>Doctrine</li>
+  </ul>
   <div class="act">
     <button id="jump" class="jump" type="button">Open at random</button>
-    <span class="hint">or press <kbd>R</kbd></span>
   </div>
+  <button id="stats-toggle" class="plain" type="button" aria-expanded="false" aria-controls="stats">Statistics</button>
   <button id="sources-toggle" class="plain" type="button" aria-expanded="false" aria-controls="sources">Sources</button>
 </div>
+
+<aside id="stats" class="screen" hidden>
+  <div class="screen-inner">
+    <header class="screen-head">
+      <h2>What each book spends its words on</h2>
+      <button id="stats-close" class="plain" type="button">Close</button>
+    </header>
+    <p class="lede">Every passage of all six books, in reading order, one pixel
+    each, colored by what it does &mdash; narrative alone is left as ground,
+    since it is the commonest kind in four of the six and coloring it would
+    leave the rest nothing to stand against. Each map is squared off and scaled
+    to its column, so a short book gets larger pixels rather than a thin strip:
+    the grain tells you how long the book is. Below each map, the share of that
+    book's passages carrying each kind, all six on one scale. A passage can do
+    more than one thing, so the shares do not add to a hundred. Hover a kind to
+    see only that kind, or a pixel to read the passage.</p>
+    <div id="stats-body" class="matrix"></div>
+    <p class="colophon" id="stats-note"></p>
+    <div id="peek" class="peek" role="status" aria-live="polite" hidden>
+      <p class="peek-ref"></p>
+      <p class="peek-body"></p>
+    </div>
+  </div>
+</aside>
 
 <aside id="sources" class="sources" hidden>
   <div class="sources-inner">
@@ -34,7 +65,21 @@
     the page fades around it. Scroll a column to move its light, or open all six
     somewhere new.</p>
     <dl id="sources-list"></dl>
-    <p class="colophon">Every translation here is public domain or CC0. Nothing is
+    <h2 class="sub">The marks in the margin</h2>
+    <p class="lede">Each passage is labelled by what it does. Five of those
+    kinds are marked with a colored rule in a fixed slot beside the text
+    &mdash; law, promise of reward, threat, violence, doctrine &mdash; and a passage
+    often carries more than one: a command with a punishment attached gets two.
+    The slot is fixed, so an indented lone rule is a threat and not a law
+    whether or not you can tell the colors apart. The remaining two kinds
+    &mdash; narrative and worship &mdash; are named in the column head for
+    whichever passage is lit. Threat and violence are kept apart on purpose: a
+    threat warns the hearer what is coming for them, while violence is harm
+    described, whoever it falls on. Being the victim is not being threatened. The labels are a model's reading of the
+    form, not anyone's doctrine, and they are wrong often enough to be worth
+    checking against the passage beside them.</p>
+    <p class="colophon">Press <kbd>R</kbd> to open every book somewhere new.
+    Every translation here is public domain or CC0. Nothing is
     edited beyond joining the hard-wrapped lines of the source files back into
     paragraphs.</p>
   </div>
