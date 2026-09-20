@@ -1,7 +1,66 @@
 {
+ "traditions": [
+  {
+   "id": "judaism",
+   "title": "Judaism",
+   "texts": [
+    "old-testament"
+   ]
+  },
+  {
+   "id": "christianity",
+   "title": "Christianity",
+   "texts": [
+    "new-testament"
+   ]
+  },
+  {
+   "id": "islam",
+   "title": "Islam",
+   "texts": [
+    "quran",
+    "sahih-bukhari",
+    "sahih-muslim",
+    "sunan-abu-dawud",
+    "jami-tirmidhi",
+    "sunan-nasai",
+    "sunan-ibn-majah"
+   ]
+  },
+  {
+   "id": "mormonism",
+   "title": "Mormonism",
+   "texts": [
+    "book-of-mormon"
+   ]
+  },
+  {
+   "id": "hinduism",
+   "title": "Hinduism",
+   "texts": [
+    "bhagavad-gita",
+    "rig-veda",
+    "upanishads",
+    "laws-of-manu"
+   ]
+  },
+  {
+   "id": "buddhism",
+   "title": "Buddhism",
+   "texts": [
+    "vinaya-pitaka",
+    "digha-nikaya",
+    "majjhima-nikaya",
+    "samyutta-nikaya",
+    "anguttara-nikaya",
+    "khuddaka-nikaya"
+   ]
+  }
+ ],
  "texts": [
   {
    "id": "old-testament",
+   "tradition": "judaism",
    "title": "The Old Testament",
    "short": "Old Testament",
    "subtitle": "King James Version",
@@ -12,6 +71,7 @@
   },
   {
    "id": "new-testament",
+   "tradition": "christianity",
    "title": "The New Testament",
    "short": "New Testament",
    "subtitle": "King James Version",
@@ -22,6 +82,7 @@
   },
   {
    "id": "quran",
+   "tradition": "islam",
    "title": "The Quran",
    "short": "Quran",
    "subtitle": "Translated by Marmaduke Pickthall",
@@ -31,7 +92,74 @@
    "chunk": 400
   },
   {
+   "id": "sahih-bukhari",
+   "tradition": "islam",
+   "title": "Sahih al-Bukhari",
+   "short": "Bukhari",
+   "subtitle": "Compiled by Muhammad al-Bukhari, translated by Muhsin Khan",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 7277,
+   "chunk": 400
+  },
+  {
+   "id": "sahih-muslim",
+   "tradition": "islam",
+   "title": "Sahih Muslim",
+   "short": "Muslim",
+   "subtitle": "Compiled by Muslim ibn al-Hajjaj, translated by Abdul Hamid Siddiqui",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 7458,
+   "chunk": 400
+  },
+  {
+   "id": "sunan-abu-dawud",
+   "tradition": "islam",
+   "title": "Sunan Abi Dawud",
+   "short": "Abu Dawud",
+   "subtitle": "Compiled by Abu Dawud al-Sijistani, translated by Ahmad Hasan",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 5276,
+   "chunk": 400
+  },
+  {
+   "id": "jami-tirmidhi",
+   "tradition": "islam",
+   "title": "Jami' al-Tirmidhi",
+   "short": "Tirmidhi",
+   "subtitle": "Compiled by Muhammad al-Tirmidhi",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 4053,
+   "chunk": 400
+  },
+  {
+   "id": "sunan-nasai",
+   "tradition": "islam",
+   "title": "Sunan al-Nasa'i",
+   "short": "Nasa'i",
+   "subtitle": "Compiled by Ahmad al-Nasa’i",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 5768,
+   "chunk": 400
+  },
+  {
+   "id": "sunan-ibn-majah",
+   "tradition": "islam",
+   "title": "Sunan Ibn Majah",
+   "short": "Ibn Majah",
+   "subtitle": "Compiled by Ibn Majah al-Qazwini",
+   "source": "github.com/AhmedBaset/hadith-json (sunnah.com texts)",
+   "license": "Translation status uncertain — the standard English versions (Muhsin Khan, Abdul Hamid Siddiqui and others) are twentieth century and not demonstrably public domain",
+   "count": 4345,
+   "chunk": 400
+  },
+  {
    "id": "book-of-mormon",
+   "tradition": "mormonism",
    "title": "The Book of Mormon",
    "short": "Book of Mormon",
    "subtitle": "Another Testament of Jesus Christ",
@@ -42,6 +170,7 @@
   },
   {
    "id": "bhagavad-gita",
+   "tradition": "hinduism",
    "title": "The Bhagavad Gita",
    "short": "Bhagavad Gita",
    "subtitle": "The Song Celestial, translated by Sir Edwin Arnold",
@@ -51,13 +180,102 @@
    "chunk": 400
   },
   {
-   "id": "tripitaka",
-   "title": "The Pali Canon (Tipitaka)",
-   "short": "Pali Canon",
-   "subtitle": "Translated by Bhikkhu Sujato and Bhikkhu Brahmali",
+   "id": "rig-veda",
+   "tradition": "hinduism",
+   "title": "The Rig Veda",
+   "short": "Rig Veda",
+   "subtitle": "Translated by Ralph T. H. Griffith",
+   "source": "github.com/aasi-archive/rigveda (from sacred-texts.com)",
+   "license": "Public domain (The Hymns of the Rigveda, Ralph T. H. Griffith, 1896)",
+   "count": 10550,
+   "chunk": 400
+  },
+  {
+   "id": "upanishads",
+   "tradition": "hinduism",
+   "title": "The Upanishads",
+   "short": "Upanishads",
+   "subtitle": "Translated by F. Max Müller",
+   "source": "sacred-texts.com/hin/sbe01 and sbe15 (via the Wayback Machine)",
+   "license": "Public domain (The Upanishads, F. Max Müller, Sacred Books of the East vols. 1 and 15, 1879 and 1884)",
+   "count": 2212,
+   "chunk": 400
+  },
+  {
+   "id": "laws-of-manu",
+   "tradition": "hinduism",
+   "title": "The Laws of Manu",
+   "short": "Laws of Manu",
+   "subtitle": "Translated by Georg Bühler",
+   "source": "sacred-texts.com/hin/manu (via the Wayback Machine)",
+   "license": "Public domain (The Laws of Manu, Georg Bühler, Sacred Books of the East vol. 25, 1886)",
+   "count": 2683,
+   "chunk": 400
+  },
+  {
+   "id": "vinaya-pitaka",
+   "tradition": "buddhism",
+   "title": "The Vinaya Pitaka",
+   "short": "Vinaya",
+   "subtitle": "The monastic code, translated by Bhikkhu Brahmali",
    "source": "github.com/suttacentral/bilara-data (published branch)",
-   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta, Abhidhamma) and Bhikkhu Brahmali (Vinaya)",
-   "count": 56270,
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 17482,
+   "chunk": 400
+  },
+  {
+   "id": "digha-nikaya",
+   "tradition": "buddhism",
+   "title": "The Digha Nikaya",
+   "short": "Dīgha",
+   "subtitle": "The long discourses, translated by Bhikkhu Sujato",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 4556,
+   "chunk": 400
+  },
+  {
+   "id": "majjhima-nikaya",
+   "tradition": "buddhism",
+   "title": "The Majjhima Nikaya",
+   "short": "Majjhima",
+   "subtitle": "The middle-length discourses, translated by Bhikkhu Sujato",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 6660,
+   "chunk": 400
+  },
+  {
+   "id": "samyutta-nikaya",
+   "tradition": "buddhism",
+   "title": "The Samyutta Nikaya",
+   "short": "Saṁyutta",
+   "subtitle": "The linked discourses, translated by Bhikkhu Sujato",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 11942,
+   "chunk": 400
+  },
+  {
+   "id": "anguttara-nikaya",
+   "tradition": "buddhism",
+   "title": "The Anguttara Nikaya",
+   "short": "Aṅguttara",
+   "subtitle": "The numbered discourses, translated by Bhikkhu Sujato",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 10132,
+   "chunk": 400
+  },
+  {
+   "id": "khuddaka-nikaya",
+   "tradition": "buddhism",
+   "title": "The Khuddaka Nikaya",
+   "short": "Khuddaka",
+   "subtitle": "Nine of its books, translated by Bhikkhu Sujato",
+   "source": "github.com/suttacentral/bilara-data (published branch)",
+   "license": "Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya)",
+   "count": 5498,
    "chunk": 400
   }
  ]

@@ -3,8 +3,26 @@
 **Subject.** Not "a text viewer" — it's two old things at once. *Sortes*: the
 practice of opening a holy book at random and reading where your finger lands,
 which exists in every one of these six traditions. And the **polyglot**: the
-ruled parallel columns of Walton's or the Complutensian, six scriptures laid
-side by side on one spread so the eye can cross between them.
+ruled parallel columns of Walton's or the Complutensian, scriptures laid side
+by side on one spread so the eye can cross between them.
+
+**A column is a tradition, not a book.** Six columns is the polyglot; thirteen
+is a spreadsheet. So the column is the shelf — Islam's holds the Quran and the
+six hadith collections, Hinduism's the Gita, the Rig Veda, the Upanishads and
+Manu — and a jump takes a book down at random. This is also truer to *sortes*
+than a fixed column per book: you go to the shelf, not to the volume.
+
+**Books within a tradition come up equally often, not by length.** Weighted by
+length the Islam column would be 85% hadith and the Hinduism column would show
+the Gita's 245 stanzas once in forty. Equal weighting means a short book
+repeats sooner, which is the cheaper cost by a long way.
+
+**The statistics screen is one block per tradition, ruled apart and stacked.**
+Every block keeps the column width of the widest tradition, so a book column is
+the same width wherever it appears, and every bar is on one scale across all
+thirteen books. A row therefore compares as well down the screen as across it,
+and a block can still be read on its own — what the six hadith collections do
+against each other is a question the old single wide table could not ask.
 
 **The one bold move.** Rubrication. Across Hebrew, Christian, Islamic, Buddhist
 and Sanskrit manuscript traditions the body was written in black and the

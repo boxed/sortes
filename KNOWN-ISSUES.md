@@ -1,7 +1,8 @@
-# Known issues in the labels
+# Known issues
 
-The labels under `data/<text>/labels/` are a small model's reading of literary
-form. `scripts/labels.py` rejects a chunk that is the wrong length, uses codes
+Most of this is about the labels under `data/<text>/labels/`, which are a
+model's reading of literary form; the last two sections are about the texts
+themselves. For the labels: `scripts/labels.py` rejects a chunk that is the wrong length, uses codes
 outside `LPTNDW`, or leaves more than 40% of passages blank. Everything below
 passed those checks and is still suspect.
 
@@ -141,3 +142,37 @@ One worker (job 24) went past its brief and coded 39 passages the rest of the
 corpus leaves blank — Saṃyutta catechetical questions. Those were reverted;
 its threat/violence work was kept. Worth checking for on any future re-run
 that tells workers to leave other codes alone.
+
+## The hadith translations are not public domain
+
+Every other text here is public domain or CC0. The standard English hadith
+translations are not: Muhsin Khan's Bukhari and Abdul Hamid Siddiqui's Muslim
+are twentieth century, widely mirrored, and of uncertain status. They are in
+anyway, because the alternative was an Islam column holding one book, and
+because no public domain English translation of the six books exists to use
+instead. The README, the sources panel and the manifest all say so rather than
+claiming a clean sheet. If that trade is not acceptable, drop `build_hadith`
+from `BUILDERS` in `scripts/build_all.py` and rebuild.
+
+## Where the new texts are ragged
+
+**The Rig Veda's stanza numbers.** Griffith's stanzas are split apart out of
+one string per hymn, on the numeral that opens each. The scan behind that text
+misread a few numerals — a line-initial "I" as a "1", and the odd "1ṬHE" with
+the space eaten — so `build_rigveda.py` renumbers the stanzas by the order it
+finds them rather than trusting the numeral, and refuses a split where the text
+after the numeral opens in lower case. That lands at 10,550 stanzas against a
+canonical 10,552. The text is complete and in order; a handful of references in
+the back half of Mandala 8 are off by a stanza or two, because the Valakhilya
+hymns (8.49–8.59) carry their own numbering in the source.
+
+**The Upanishads' footnotes.** Müller's call-outs are anchors in the HTML and
+are pulled out by `build_upanishads.py`, along with the space they sat in.
+Anything he set as a footnote is gone with them, so a passage that leans on a
+note reads thinner here than on the page. Verses split across several
+paragraphs are joined back into one passage.
+
+**The Old Testament sits under Judaism and the New under Christianity.** It is
+a rough cut — the Old Testament is scripture to both, and the KJV arranges it
+the Christian way, not the Tanakh's — but the alternative is printing 23,145
+passages twice and having two columns that often fall open on the same verse.

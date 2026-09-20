@@ -49,7 +49,7 @@ def collect():
 def build():
     return [write_text('bhagavad-gita', 'The Bhagavad Gita', 'Bhagavad Gita',
                        'The Song Celestial, translated by Sir Edwin Arnold',
-                       SOURCE, LICENSE, collect())]
+                       SOURCE, LICENSE, collect(), tradition='hinduism')]
 
 
 if __name__ == '__main__':

@@ -22,7 +22,7 @@ import re
 import sys
 
 from common import DATA
-from labels import (CODES, MAX_CODES, ORDER, WORK, chunk_count, manifest,
+from labels import (CODES, MAX_CODES, WORK, chunk_count, manifest, order,
                     paths, validate)
 
 VIOLENCE = re.compile(
@@ -41,7 +41,7 @@ def candidates():
     """Every passage the split could move, with where it lives."""
     texts = manifest()
     found = []
-    for text_id in ORDER:
+    for text_id in order():
         text = texts[text_id]
         for number in range(chunk_count(text)):
             source, labels = paths(text_id, number)

@@ -4,6 +4,22 @@ bilara keeps the English in one layer and the markup in another, keyed by the
 same segment ids. The markup layer is what says where a paragraph starts, which
 lines are verse, and which segments are only headings — so the two are read
 together rather than guessed at from the segment numbering.
+
+The canon comes out as six texts rather than one. Fifty-six thousand passages
+under a single name is not a book anyone reads or cites, and on the statistics
+screen it was one column dwarfing every other. These are the divisions the
+tradition itself uses: the Vinaya, and the five nikayas of the Sutta Pitaka,
+each cited by its own acronym.
+
+The third basket, the Abhidhamma, is not here. bilara-data has no English
+translation of it — the directory the earlier build read was empty, and the
+count came out the same with and without it. Two baskets of three.
+
+The Khuddaka is partial too: nine of its books are translated (Dhammapada,
+Udana, Itivuttaka, Sutta Nipata, Theragatha, Therigatha, Jataka,
+Khuddakapatha, Cariyapitaka), and the rest are not. So this is a large part of
+the Pali Canon and not the whole of it, which is why no text here is called
+"the Pali Canon".
 """
 import json
 import os
@@ -12,22 +28,30 @@ import re
 from common import TMP, squash, write_text
 
 SOURCE = 'github.com/suttacentral/bilara-data (published branch)'
-LICENSE = ('Creative Commons Zero — translations by Bhikkhu Sujato '
-           '(Sutta, Abhidhamma) and Bhikkhu Brahmali (Vinaya)')
+LICENSE = ('Creative Commons Zero — translations by Bhikkhu Sujato (Sutta) '
+           'and Bhikkhu Brahmali (Vinaya)')
 
 ROOT = os.path.join(TMP, 'bilara-data-published')
 TRANSLATIONS = os.path.join(ROOT, 'translation', 'en')
 MARKUP = os.path.join(ROOT, 'html', 'pli', 'ms')
 
-# Canonical order of the three baskets, as (directory, label) pairs.
+# In canonical order: the Vinaya, then the five nikayas of the Sutta Pitaka.
+# Short names are kept to one word because they head a narrow column on the
+# statistics screen, where "Buddhism" already stands above them.
 BASKETS = [
-    ('brahmali/vinaya', 'Vinaya Pitaka'),
-    ('sujato/sutta/dn', 'Digha Nikaya'),
-    ('sujato/sutta/mn', 'Majjhima Nikaya'),
-    ('sujato/sutta/sn', 'Samyutta Nikaya'),
-    ('sujato/sutta/an', 'Anguttara Nikaya'),
-    ('sujato/sutta/kn', 'Khuddaka Nikaya'),
-    ('sujato/abhidhamma', 'Abhidhamma Pitaka'),
+    ('brahmali/vinaya', 'vinaya-pitaka', 'The Vinaya Pitaka', 'Vinaya',
+     'The monastic code, translated by Bhikkhu Brahmali'),
+    ('sujato/sutta/dn', 'digha-nikaya', 'The Digha Nikaya', 'D\u012bgha',
+     'The long discourses, translated by Bhikkhu Sujato'),
+    ('sujato/sutta/mn', 'majjhima-nikaya', 'The Majjhima Nikaya', 'Majjhima',
+     'The middle-length discourses, translated by Bhikkhu Sujato'),
+    ('sujato/sutta/sn', 'samyutta-nikaya', 'The Samyutta Nikaya', 'Sa\u1e41yutta',
+     'The linked discourses, translated by Bhikkhu Sujato'),
+    ('sujato/sutta/an', 'anguttara-nikaya', 'The Anguttara Nikaya',
+     'A\u1e45guttara',
+     'The numbered discourses, translated by Bhikkhu Sujato'),
+    ('sujato/sutta/kn', 'khuddaka-nikaya', 'The Khuddaka Nikaya', 'Khuddaka',
+     'Nine of its books, translated by Bhikkhu Sujato'),
 ]
 
 NUMBERS = re.compile(r'(\d+)')
@@ -125,24 +149,24 @@ def read_text(filename):
         yield finished
 
 
-def collect():
-    for directory, basket in BASKETS:
-        for filename in files_in(directory):
-            uid = os.path.basename(filename).split('_translation')[0]
-            citation, known = cite(uid)
-            for title, key, text in read_text(filename):
-                # The acronym already says which nikaya; only the Vinaya and
-                # Abhidhamma need their basket spelled out.
-                name = title or basket
-                if title and not known:
-                    name = f'{title}, {basket}'
-                yield f'{name} ({citation} {key})', TAG.sub('', text)
+def collect(directory, basket):
+    for filename in files_in(directory):
+        uid = os.path.basename(filename).split('_translation')[0]
+        citation, known = cite(uid)
+        for title, key, text in read_text(filename):
+            # The acronym already says which nikaya; only the Vinaya, whose
+            # uids are opaque, needs its basket spelled out.
+            name = title or basket
+            if title and not known:
+                name = f'{title}, {basket}'
+            yield f'{name} ({citation} {key})', TAG.sub('', text)
 
 
 def build():
-    return [write_text('tripitaka', 'The Pali Canon (Tipitaka)', 'Pali Canon',
-                       'Translated by Bhikkhu Sujato and Bhikkhu Brahmali',
-                       SOURCE, LICENSE, collect())]
+    return [write_text(text_id, title, short, subtitle, SOURCE, LICENSE,
+                       collect(directory, title.removeprefix('The ')),
+                       tradition='buddhism')
+            for directory, text_id, title, short, subtitle in BASKETS]
 
 
 if __name__ == '__main__':

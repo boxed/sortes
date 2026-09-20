@@ -6,3 +6,6 @@ __pycache__/
 
 # Session scratch from the editor.
 .claude/
+
+# Virtualenv holding the TypeSafe SDK that scripts/classify.py needs.
+.venv/

@@ -1,12 +1,15 @@
-/* Sortes — six scriptures side by side, each fallen open at a random passage.
+/* Sortes — six traditions side by side, each fallen open at a random passage.
  *
  * Texts are built into data/<id>/NNNN.json, each holding `chunk` paragraphs as
  * [reference, text] pairs, so opening the middle of a 56,000-paragraph canon
  * downloads a couple of hundred kilobytes rather than seventeen megabytes.
  *
- * Every book is a column with its own scroll. Whatever paragraph crosses that
- * column's reading line is the lit one, and the column fades away from it. The
- * columns are otherwise independent; the only thing they share is the button.
+ * A column is a tradition, not a book: Islam has seven books on the shelf here
+ * and Judaism one, and six columns of tradition compare better than thirteen
+ * columns of book. Each jump takes a book from the column's shelf and opens it
+ * somewhere. Whatever paragraph crosses that column's reading line is the lit
+ * one, and the column fades away from it. The columns are otherwise
+ * independent; the only thing they share is the button.
  */
 
 const WINDOW = 70;      // paragraphs rendered either side of the landing passage
@@ -28,6 +31,13 @@ const statsToggle = document.getElementById('stats-toggle');
 
 const chunks = new Map();
 
+// The index files are rebuilt whenever the corpus is, and a browser holding
+// yesterday's copy of one will fetch chunks for a text that no longer exists,
+// or read a stats.json whose shape has moved on. Both fail a long way from the
+// cause. They are small, so they are always revalidated; the passage chunks
+// under them never change in place and are left to cache normally.
+const FRESH = { cache: 'no-cache' };
+
 // Four of the six codes are shown as rules, in fixed slots so position — not
 // colour alone — says which is which. Narrative and worship are named in the
 // column head instead: narrative is the commonest kind in four of the six
@@ -37,12 +47,13 @@ const FORCES = [
   ['L', 'Law'], ['P', 'Promise'], ['T', 'Threat'], ['V', 'Violence'],
   ['D', 'Doctrine'],
 ];
-const MODES = { N: 'narrative', W: 'worship' };
-const columns = new Map();   // text id -> column state, one per text
+const MODES = { N: 'narrative', W: 'worship', A: 'provenance' };
+const columns = new Map();   // tradition id -> column state, one per tradition
 
 let texts = [];
+let traditions = [];
 let byId = {};
-let mode = 'all';            // 'all' for the polyglot, or a single text id
+let mode = 'all';            // 'all' for the polyglot, or a single tradition id
 let generation = 0;          // bumped per jump, so a slow one cannot land late
 
 /* ---- data ----------------------------------------------------------- */
@@ -99,25 +110,32 @@ async function slice(text, from, to) {
 
 /* ---- columns -------------------------------------------------------- */
 
-function buildColumn(text) {
+function buildColumn(tradition) {
   const root = document.createElement('section');
   root.className = 'column';
-  root.dataset.text = text.id;
+  root.dataset.tradition = tradition.id;
 
-  // The running head: which book, and where in it you are. In the polyglot it
-  // sits above the column; given room it hangs in the margin at the reading
-  // line, beside the passage it names.
+  // The running head: whose shelf this column is, which book came off it, and
+  // where in that book you are. The tradition is the only fixed part — the
+  // book changes under it on every jump, which is the whole point of the
+  // column — so it is set once here and the title below it is rewritten. In
+  // the polyglot the head sits above the column; given room it hangs in the
+  // margin at the reading line, beside the passage it names.
   const head = document.createElement('header');
   head.className = 'head';
+  const where = document.createElement('p');
+  where.className = 'head-where';
+  where.textContent = tradition.title;
   const book = document.createElement('h2');
   book.className = 'head-book';
-  book.append(document.createTextNode(text.short));
+  const title = document.createTextNode('');
+  book.append(title);
   const form = document.createElement('span');
   form.className = 'head-form';
   book.append(form);
   const reference = document.createElement('p');
   reference.className = 'head-ref';
-  head.append(book, reference);
+  head.append(where, book, reference);
 
   const stream = document.createElement('div');
   stream.className = 'stream';
@@ -132,7 +150,11 @@ function buildColumn(text) {
   root.append(head, stream);
 
   const column = {
-    text, root, reference, form, stream, page, edge,
+    tradition, root, title, reference, form, stream, page, edge,
+    // Which books this column can fall open at, and which one it is showing.
+    shelf: tradition.texts.map((id) => byId[id]),
+    only: null,          // set when one book has been asked for by name
+    text: null,
     shown: null, lit: null, settling: false,
   };
 
@@ -231,19 +253,23 @@ function relight(column) {
   if (found !== column.lit) light(column, found);
 }
 
-async function render(column, from, to) {
-  const { rows, labelled } = await slice(column.text, from, to);
+async function render(column, text, from, to) {
+  const { rows, labelled } = await slice(text, from, to);
   column.page.replaceChildren(...fill(from, rows));
-  column.shown = { from, to, refs: rows.map((row) => row[0]) };
-  column.edge.hidden = to < column.text.count;
+  column.text = text;
+  column.title.data = text.short;
+  // The region remembers which book it came out of, so a scroll that reaches
+  // an edge extends the book it is showing and not whichever one a jump has
+  // since put in the column.
+  column.shown = { text, from, to, refs: rows.map((row) => row[0]) };
+  column.edge.hidden = to < text.count;
   column.root.dataset.labelled = labelled ? 'yes' : 'no';
 }
 
 /** Pull in more paragraphs when the reader nears either end of the column. */
 async function extend(column, end) {
-  const { text } = column;
   const region = column.shown;
-  const { from, to } = region;
+  const { text, from, to } = region;
 
   if (end === 'start') {
     if (from === 0) return;
@@ -279,6 +305,15 @@ function onScroll(column) {
 
 /* ---- opening -------------------------------------------------------- */
 
+/** Which book this column falls open at: the one asked for by name, or any
+ *  of the tradition's, each as likely as the next. Weighting by length would
+ *  bury the Gita's 245 stanzas under the Rig Veda and the Quran under the
+ *  hadith, and a column that never shows the Quran is not an Islam column. */
+function pick(column) {
+  if (column.only) return column.only;
+  return column.shelf[Math.floor(Math.random() * column.shelf.length)];
+}
+
 /** Where a jump should land in one text: random, but never on "Yes, sir." */
 async function choose(text) {
   const index = Math.floor(Math.random() * text.count);
@@ -291,13 +326,12 @@ async function choose(text) {
   return at;
 }
 
-async function open(column, index, token) {
+async function open(column, text, index, token) {
   column.settling = true;
   column.lit = null;
 
-  const { text } = column;
   const from = Math.max(0, index - WINDOW);
-  await render(column, from, Math.min(text.count, index + WINDOW + 1));
+  await render(column, text, from, Math.min(text.count, index + WINDOW + 1));
   if (token !== generation) return; // a later jump already took this column
 
   const target = column.page.querySelector(`[data-index="${index}"]`);
@@ -328,11 +362,17 @@ function onScreen() {
   return mode === 'all' ? [...columns.values()] : [columns.get(mode)];
 }
 
+/** The column a text belongs to — its tradition's. */
+function columnFor(text) {
+  return columns.get(text.tradition);
+}
+
 async function jump() {
   const token = ++generation;
   await Promise.all(onScreen().map(async (column) => {
-    const index = await choose(column.text);
-    if (token === generation) await open(column, index, token);
+    const text = pick(column);
+    const index = await choose(text);
+    if (token === generation) await open(column, text, index, token);
   }));
 }
 
@@ -371,35 +411,71 @@ function show() {
 
 /* ---- chrome --------------------------------------------------------- */
 
+function button(label, pressed, onPick) {
+  const element = document.createElement('button');
+  element.type = 'button';
+  element.textContent = label;
+  element.setAttribute('aria-pressed', String(pressed));
+  element.addEventListener('click', onPick);
+  return element;
+}
+
+/** The bar names the six traditions, not the thirteen books. Thirteen would
+ *  not fit and would not help: which book you land in is the column's business.
+ *  Drop to one tradition and the books it holds appear as a second row, so a
+ *  single book can still be asked for by name. */
 function buildNav() {
-  const options = [{ id: 'all', short: 'All six' }, ...texts];
-  booksNav.replaceChildren(...options.map((option) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = option.short;
-    button.setAttribute('aria-pressed', String(option.id === mode));
-    button.addEventListener('click', () => {
-      for (const other of booksNav.children) {
-        other.setAttribute('aria-pressed', String(other === button));
-      }
-      mode = option.id;
-      show();
+  const rows = [document.createElement('span'), document.createElement('span')];
+  rows.forEach((row) => { row.className = 'nav-row'; });
+
+  const pickMode = (id) => {
+    mode = id;
+    for (const column of columns.values()) column.only = null;
+    buildNav();
+    show();
+    jump();
+  };
+  rows[0].append(button('All six', mode === 'all', () => pickMode('all')));
+  for (const tradition of traditions) {
+    rows[0].append(button(tradition.title, mode === tradition.id,
+                          () => pickMode(tradition.id)));
+  }
+
+  const column = mode === 'all' ? null : columns.get(mode);
+  if (column && column.shelf.length > 1) {
+    const pickBook = (text) => {
+      column.only = text;
+      buildNav();
       jump();
-    });
-    return button;
-  }));
+    };
+    rows[1].append(button('Any of them', !column.only, () => pickBook(null)));
+    for (const text of column.shelf) {
+      rows[1].append(button(text.short, column.only === text,
+                            () => pickBook(text)));
+    }
+  }
+  booksNav.replaceChildren(...rows.filter((row) => row.children.length));
 }
 
 function buildSources() {
   const list = document.getElementById('sources-list');
-  for (const text of texts) {
-    const dt = document.createElement('dt');
-    dt.textContent = `${text.title} — ${text.subtitle}`;
-    const dd = document.createElement('dd');
-    dd.textContent = `${text.count.toLocaleString('en')} passages. `
-      + `${text.source}. ${text.license}.`;
-    list.append(dt, dd);
+  const parts = [];
+  for (const tradition of traditions) {
+    const heading = document.createElement('dt');
+    heading.className = 'sources-where';
+    heading.textContent = tradition.title;
+    parts.push(heading);
+    for (const id of tradition.texts) {
+      const text = byId[id];
+      const dt = document.createElement('dt');
+      dt.textContent = `${text.title} — ${text.subtitle}`;
+      const dd = document.createElement('dd');
+      dd.textContent = `${text.count.toLocaleString('en')} passages. `
+        + `${text.source}. ${text.license}.`;
+      parts.push(dt, dd);
+    }
   }
+  list.replaceChildren(...parts);
 }
 
 /* ---- statistics -------------------------------------------------------- */
@@ -415,16 +491,37 @@ function buildSources() {
 // leave nothing for the others to be figure against.
 const PIXELS = {
   L: '--law', P: '--promise', T: '--threat', V: '--violence',
-  D: '--doctrine', W: '--worship',
+  D: '--doctrine', W: '--worship', A: '--provenance',
 };
-// Bit order must match BITS in stats.py; narrative takes the seventh bit.
-const BITS = ['L', 'P', 'T', 'V', 'D', 'W', 'N'];
+// Bit order must match BITS in stats.py; narrative takes the eighth bit.
+const BITS = ['L', 'P', 'T', 'V', 'D', 'W', 'A', 'N'];
 // Which colour a passage takes when nothing is isolated and it carries several:
-// the sharpest rhetorical force wins, and narrative is ground.
+// the sharpest rhetorical force wins. Narrative is ground. Provenance sits
+// last and only when it is being counted, so a passage that does something
+// keeps the colour of what it does, and only a bare chain of narrators — a
+// hadith with an isnad and no matn — comes up in its pigment.
 const OVER = ['T', 'V', 'P', 'L', 'W', 'D'];
+const OVER_FRAME = [...OVER, 'A'];
+
+// A column is a tradition, and its books run down it end to end with a band of
+// ground between them: the Quran above the six hadith collections, the Vinaya
+// above the five nikayas. Five rows, left transparent rather than drawn, so it
+// reads as a gap in the text and not as a mark on it.
+//
+// A band at every book *inside* a text — a rule at each of the Quran's 114
+// surahs — was tried and came far too often to read; the map turned into more
+// seam than text.
+const SEAM = 5;
+// What sits in a cell that holds no passage.
+const PAD = -1;
 
 let statsLoaded = false;
+let kindNames = {};              // code -> what to call it, in taxonomy order
 const drawn = new Map();
+// canvas -> which passage sits in each cell of its grid, -1 for the seams.
+// Drawing and hovering both read this, so a pixel cannot mean one passage to
+// the eye and a different one to the card that reads it.
+const placed = new Map();
 
 function swatch(shade) {
   const probe = getComputedStyle(document.documentElement);
@@ -443,7 +540,51 @@ function masks(text) {
   return out;
 }
 
-function drawMap(canvas, strip) {
+/** True when a passage carries a chain of narrators and nothing else.
+ *
+ *  Such a passage does nothing — a hadith with an isnad and no matn — so with
+ *  provenance excluded it is not in the corpus at all, and the map gives it no
+ *  pixel rather than a blank one.
+ */
+function frameOnly(mask) {
+  return mask === (1 << BITS.indexOf(FRAME));
+}
+
+/** Lay a tradition's books across `width` columns, a band between each.
+ *
+ *  A book starts on a fresh row rather than partway along one, so the band
+ *  reads as a gap right across the map instead of a notch in it.
+ */
+function place(parts, strip, width) {
+  const cells = [];
+  let at = 0;
+  parts.forEach((part, n) => {
+    for (let i = 0; i < part.count; i += 1) {
+      if (!counting && frameOnly(strip[at + i])) continue;
+      cells.push(at + i);
+    }
+    at += part.count;
+    while (cells.length % width) cells.push(PAD);
+    if (n + 1 < parts.length) {
+      for (let i = 0; i < width * SEAM; i += 1) cells.push(PAD);
+    }
+  });
+  while (cells.length % width) cells.push(PAD);
+  return Int32Array.from(cells);
+}
+
+/** Which book of a tradition a passage index falls in, and where inside it. */
+function within(parts, index) {
+  let at = 0;
+  for (const part of parts) {
+    if (index < at + part.count) return [byId[part.id], index - at];
+    at += part.count;
+  }
+  return [null, 0];
+}
+
+function drawMap(canvas, entry) {
+  const { strip, parts } = entry;
   // Aim for a square, and stop widening at the column — past that the map
   // grows downwards, which in practice is only the Pali Canon. A short book
   // then has fewer, larger pixels rather than a two-pixel smear: every map
@@ -451,7 +592,9 @@ function drawMap(canvas, strip) {
   // area. It also gives the Gita hover targets you can actually hit.
   const cap = Math.max(1, Math.floor(canvas.parentElement.clientWidth));
   const width = Math.min(cap, Math.ceil(Math.sqrt(strip.length)));
-  const rows = Math.ceil(strip.length / width);
+  const cells = place(parts, strip, width);
+  const rows = cells.length / width;
+  placed.set(canvas, cells);
   canvas.width = width;
   canvas.height = rows;
   const ctx = canvas.getContext('2d');
@@ -466,9 +609,11 @@ function drawMap(canvas, strip) {
   const ink = swatch('--ink');
   const inkRgb = [1, 3, 5].map((k) => parseInt(ink.slice(k, k + 2), 16));
 
-  for (let i = 0; i < strip.length; i += 1) {
+  for (let cell = 0; cell < cells.length; cell += 1) {
+    const i = cells[cell];
+    const at = cell * 4;
+    if (i === PAD) continue;
     const mask = strip[i];
-    const at = i * 4;
     if (isolated) {
       // One kind at a time: the chosen passages stay solid and the rest all
       // but vanish, so the shape is legible without seeing any colour at all.
@@ -479,7 +624,7 @@ function drawMap(canvas, strip) {
       image.data[at + 3] = mine ? 255 : 18;
       continue;
     }
-    const code = OVER.find((c) => mask & bit[c]);
+    const code = (counting ? OVER_FRAME : OVER).find((c) => mask & bit[c]);
     if (code) {
       [image.data[at], image.data[at + 1], image.data[at + 2]] = rgb[code];
       image.data[at + 3] = 255;
@@ -492,74 +637,115 @@ function drawMap(canvas, strip) {
   ctx.putImageData(image, 0, 0);
 }
 
+/** One column per tradition, every tradition side by side.
+ *
+ *  A row of Law reading straight across all six is the comparison the screen
+ *  exists for, so the traditions stand next to each other and the books inside
+ *  one are bands down its map rather than columns of their own. Twenty columns
+ *  was a spreadsheet; six is a polyglot.
+ */
+function columnHead(row) {
+  const head = document.createElement('div');
+  head.className = 'book';
+  const title = document.createElement('b');
+  title.textContent = row.short;
+  const count = document.createElement('span');
+  count.textContent = row.count.toLocaleString('en');
+  const books = document.createElement('i');
+  books.className = 'parts';
+  // Named top to bottom in the order they run down the map.
+  books.textContent = row.parts.map((part) => part.short).join(' · ');
+  head.append(title, count, books);
+  return head;
+}
+
 async function buildStats() {
   if (statsLoaded) return;
   statsLoaded = true;
   const body = document.getElementById('stats-body');
   const maps = [];
-  const stats = await fetch('data/stats.json').then((r) => r.json());
+  const stats = await fetch('data/stats.json', FRESH).then((r) => r.json());
   const codes = Object.entries(stats.codes);
+  kindNames = stats.codes;
+  const rows = stats.traditions;
+  if (!rows?.every((row) => row.counts)) {
+    throw new Error('data/stats.json is from an older build of this app — '
+      + 'rerun scripts/stats.py, and reload ignoring the cache');
+  }
 
-  // One column per book, held all the way down: the maps line up with the
-  // bars beneath them, so a row compares six books on one kind and a column
-  // reads one book's whole profile. Every bar is on the same scale.
-  const widest = Math.max(...stats.texts.flatMap((t) => Object.values(t.share)));
-  body.style.setProperty('--books', stats.texts.length);
+  // How many passages a share is out of. Excluding provenance takes the
+  // chain-only passages out of the corpus, not just out of the picture, so
+  // they leave the denominator too and every other figure rises a little.
+  const total = (row) => row.labelled - (counting ? 0 : row.chain);
+  const share = (row, code) => row.counts[code] / total(row);
 
-  const corner = document.createElement('div');
-  corner.className = 'corner';
-  body.append(corner);
+  // One scale for every bar, or a row would only be comparable with itself.
+  // Fixed against the fuller count, so a bar does not change length for a
+  // reason the reader cannot see when the box is ticked.
+  const widest = Math.max(...rows.flatMap(
+    (t) => Object.keys(stats.codes).map((c) => t.counts[c] / t.labelled)));
 
-  for (const row of stats.texts) {
-    const head = document.createElement('div');
-    head.className = 'book';
-    const name = document.createElement('b');
-    name.textContent = row.short;
-    const count = document.createElement('span');
-    count.textContent = `${row.count.toLocaleString('en')} passages`;
-    head.append(name, count);
+  const matrix = document.createElement('div');
+  matrix.className = 'matrix';
+  matrix.style.setProperty('--books', rows.length);
+  figures.length = 0;
 
+  const corner = () => {
+    const cell = document.createElement('div');
+    cell.className = 'corner';
+    return cell;
+  };
+
+  // The leftmost column has nothing to its left to be divided from.
+  const edge = (node, row) => {
+    if (row === rows[0]) node.dataset.edge = '';
+    return node;
+  };
+
+  matrix.append(corner());
+  for (const row of rows) {
+    const head = edge(columnHead(row), row);
     const canvas = document.createElement('canvas');
     canvas.className = 'map';
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label',
-      `${row.short}: every passage in reading order, marked where it carries `
-      + 'a law, a promise or a threat.');
+      `${row.short}: every passage of its scriptures in reading order, `
+      + 'marked by what each one does, one book above the next.');
     head.append(canvas);
-    body.append(head);
+    matrix.append(head);
 
-    wirePeek(canvas, texts.find((t) => t.id === row.id));
-    maps.push(fetch(`data/map/${row.id}.txt`)
+    wirePeek(canvas, row.parts);
+    maps.push(fetch(`data/map/${row.id}.txt`, FRESH)
       .then((r) => r.text())
-      .then((text) => { drawn.set(canvas, masks(text)); })
+      .then((text) => {
+        drawn.set(canvas, { strip: masks(text), parts: row.parts });
+      })
       .catch(() => canvas.remove()));
   }
 
-  for (const [code, name] of codes) {
-    const label = document.createElement('button');
-    label.type = 'button';
-    label.className = 'kind';
-    label.dataset.code = code;
-    label.textContent = name;
-    label.setAttribute('aria-label', `Show only ${name.toLowerCase()}`);
-    body.append(label);
+  for (const [code, label] of codes) {
+    const kind = document.createElement('button');
+    kind.type = 'button';
+    kind.className = 'kind';
+    kind.dataset.code = code;
+    if (code === FRAME) kind.dataset.frame = '';
+    kind.textContent = label;
+    kind.setAttribute('aria-label', `Show only ${label.toLowerCase()}`);
+    matrix.append(kind);
 
-    for (const row of stats.texts) {
+    for (const row of rows) {
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.dataset.code = code;
       const bar = document.createElement('i');
       bar.className = 'share';
       if (code in PIXELS) bar.dataset.code = code;
-      bar.style.width =
-        `calc((100% - var(--figure)) * ${(row.share[code] / widest).toFixed(4)})`;
       bar.setAttribute('aria-hidden', 'true');
       const figure = document.createElement('b');
-      figure.textContent = `${Math.round(row.share[code] * 100)}%`;
       cell.append(bar, figure);
-      cell.setAttribute('aria-label', `${row.short}, ${name}, ` +
-        `${Math.round(row.share[code] * 100)} percent`);
-      body.append(cell);
+      if (code === FRAME) cell.dataset.frame = '';
+      figures.push([cell, bar, figure, row, code, label]);
+      matrix.append(edge(cell, row));
     }
   }
 
@@ -570,59 +756,116 @@ async function buildStats() {
   rest.dataset.code = 'none';
   rest.textContent = 'None of these';
   rest.setAttribute('aria-label', 'Show only passages carrying none of these');
-  body.append(rest);
-  for (const row of stats.texts) {
+  matrix.append(rest);
+  remainders.length = 0;
+  for (const row of rows) {
     const cell = document.createElement('div');
     cell.className = 'cell quiet';
     cell.dataset.code = 'none';
     const figure = document.createElement('b');
-    figure.textContent = `${Math.round(row.blank * 100)}%`;
     cell.append(figure);
-    body.append(cell);
+    remainders.push([figure, row]);
+    matrix.append(edge(cell, row));
   }
 
+  // Every bar and figure is written here rather than at build time, so ticking
+  // the box rewrites them against the other denominator.
+  repaint = () => {
+    for (const [cell, bar, figure, row, code, label] of figures) {
+      const value = share(row, code);
+      bar.style.width =
+        `calc((100% - var(--figure)) * ${(value / widest).toFixed(4)})`;
+      figure.textContent = `${Math.round(value * 100)}%`;
+      cell.setAttribute('aria-label', `${row.short}, ${label}, ` +
+        `${Math.round(value * 100)} percent`);
+    }
+    for (const [figure, row] of remainders) {
+      figure.textContent = `${Math.round(row.blank / total(row) * 100)}%`;
+    }
+  };
+
+  body.replaceChildren(matrix);
   wireIsolate(body);
+  wireProvenance(body);
 
   // The canvases have to be in the document before one can be sized to its
   // column, so the drawing waits for layout.
   await Promise.all(maps);
   redrawMaps();
 
-  const short = stats.texts.filter((t) => t.labelled < t.count);
+  const counted = new Set(rows.flatMap((t) => t.parts.map((p) => p.id)));
+  const waiting = texts.filter((t) => !counted.has(t.id)).map((t) => t.short);
+  const partial = rows.filter((t) => t.labelled < t.count).map((t) => t.short);
+  const short = [...waiting, ...partial];
   document.getElementById('stats-note').textContent = short.length
-    ? `${short.map((t) => t.short).join(' and ')} still being labelled; `
-      + 'its figures will move.'
-    : 'Every passage in all six books is labelled. The labels are a model\u2019s '
-      + 'reading of the form, and wrong often enough to be worth checking.';
+    ? `Not on this screen yet, or not finished: ${short.join(', ')}.`
+    : 'Every passage of every book here is labelled. The labels are a '
+      + 'model\u2019s reading of the form, and wrong often enough to be worth '
+      + 'checking.';
 }
 
 function redrawMaps() {
-  for (const [canvas, strip] of drawn) drawMap(canvas, strip);
+  for (const [canvas, entry] of drawn) drawMap(canvas, entry);
 }
 
-/** A pixel is a passage — hovering one names it and reads it. */
-function wirePeek(canvas, text) {
+/** What a passage was labelled, as the card lists it.
+ *
+ *  Read off the same byte the map was drawn from, so the card cannot disagree
+ *  with the pixel under the cursor. Provenance is left out while it is being
+ *  excluded, for the same reason: the card describes the corpus on screen.
+ */
+function carried(mask) {
+  return Object.keys(kindNames).filter(
+    (code) => (counting || code !== FRAME)
+      && (mask & (1 << BITS.indexOf(code))));
+}
+
+/** A pixel is a passage — hovering one names it and reads it.
+ *
+ *  The column holds a whole tradition, so the pixel has to be resolved back to
+ *  the book it came from before the passage can be fetched.
+ */
+function wirePeek(canvas, parts) {
   const peek = document.getElementById('peek');
 
   canvas.addEventListener('pointermove', async (event) => {
     const box = canvas.getBoundingClientRect();
     const x = Math.floor((event.clientX - box.left) / box.width * canvas.width);
     const y = Math.floor((event.clientY - box.top) / box.height * canvas.height);
-    const index = y * canvas.width + x;
-    if (index < 0 || index >= text.count) { peek.hidden = true; return; }
+    const cells = placed.get(canvas);
+    const cell = y * canvas.width + x;
+    // Read the same grid the drawing used, so the bands between books report
+    // nothing rather than the passage that would have sat there without them.
+    const at = cells && cell >= 0 && cell < cells.length ? cells[cell] : -1;
+    const [text, index] = at < 0 ? [null, 0] : within(parts, at);
+    if (!text) { peek.hidden = true; return; }
 
     // Claim this hover, so a slow chunk fetch cannot overwrite a later one.
-    const token = {};
-    canvas.dataset.want = index;
-    peek.dataset.token = index;
+    const token = `${text.id}:${index}`;
+    peek.dataset.token = token;
 
     const rows = await chunkAt(text, index);
-    if (peek.dataset.token !== String(index)) return;
+    if (peek.dataset.token !== token) return;
     const [reference, body] = rows[index % text.chunk];
 
     peek.hidden = false;
     peek.querySelector('.peek-ref').textContent = `${text.short} · ${reference}`;
     peek.querySelector('.peek-body').textContent = body.replace(/\n/g, ' ');
+
+    const kinds = carried(drawn.get(canvas)?.strip[at] ?? 0);
+    const marks = kinds.map((code) => {
+      const mark = document.createElement('i');
+      mark.dataset.code = code;
+      mark.textContent = kindNames[code];
+      return mark;
+    });
+    if (!marks.length) {
+      const none = document.createElement('i');
+      none.className = 'nothing';
+      none.textContent = 'none of these';
+      marks.push(none);
+    }
+    peek.querySelector('.peek-kinds').replaceChildren(...marks);
 
     // Keep the card on screen rather than letting it run off the right edge.
     const width = peek.offsetWidth || 320;
@@ -633,6 +876,47 @@ function wirePeek(canvas, text) {
   });
 
   canvas.addEventListener('pointerleave', () => { peek.hidden = true; });
+}
+
+// Provenance is the one kind that says nothing about what a passage does, so
+// it is left out of the count unless it is asked for.
+const FRAME = 'A';
+const REMEMBER = 'sortes:provenance';
+
+let counting = false;            // is provenance being counted?
+let repaint = () => {};          // rewrite every bar against the current total
+const figures = [];              // the bars and their numbers
+const remainders = [];           // the "none of these" figures
+
+/** Exclude provenance, or put it back: rows, figures and maps together.
+ *
+ *  Excluded is the default. Provenance says how a passage reached you and not
+ *  what it does, and nearly every hadith carries one, so counting it buries
+ *  what the six collections actually say.
+ */
+function wireProvenance(body) {
+  const box = document.getElementById('stats-provenance');
+  const apply = (excluded) => {
+    counting = !excluded;
+    body.toggleAttribute('data-frame', counting);
+    repaint();
+    // Leaving it isolated while hiding it would dim every other row against a
+    // kind that is no longer on screen.
+    if (excluded && isolated === FRAME) releaseIsolate();
+    redrawMaps();
+  };
+  let remembered = null;
+  try {
+    remembered = localStorage.getItem(REMEMBER);
+  } catch { /* private window, or storage refused: the default will do */ }
+  box.checked = remembered !== 'no';        // excluded unless asked otherwise
+  apply(box.checked);
+  box.addEventListener('change', () => {
+    apply(box.checked);
+    try {
+      localStorage.setItem(REMEMBER, box.checked ? 'yes' : 'no');
+    } catch { /* nothing to do; the screen still works */ }
+  });
 }
 
 /** Hover, focus or tap a kind to see only that kind, in bars and maps alike. */
@@ -666,37 +950,67 @@ function wireIsolate(body) {
 }
 
 function showStats(visible) {
-  if (visible) buildStats();
+  if (visible) {
+    buildStats().catch((error) => {
+      statsLoaded = false;          // so a reload can try again
+      document.getElementById('stats-body').textContent =
+        `The statistics could not be drawn: ${error.message}`;
+    });
+  }
   stats.hidden = !visible;
   statsToggle.setAttribute('aria-expanded', String(visible));
+  rememberPlaces();
 }
 
 function showSources(visible) {
   sources.hidden = !visible;
   sourcesToggle.setAttribute('aria-expanded', String(visible));
+  rememberPlaces();
 }
 
 /* ---- linking -------------------------------------------------------- */
 
 let pending = 0;
 
-/** Keep the URL pointing at the spread on screen, so it can be linked to. */
+// Which screen is open rides in the URL beside the passages, as a bare word
+// among the book:index pairs. A link to the statistics is a thing people want
+// to send, and landing back on the spread having asked for the statistics is a
+// small betrayal of the link.
+const SCREENS = { statistics: () => stats, sources: () => sources };
+
+/** Keep the URL pointing at what is on screen, so it can be linked to. */
 function rememberPlaces() {
   clearTimeout(pending);
   pending = setTimeout(() => {
-    const places = onScreen()
+    const parts = onScreen()
       .filter((column) => column.lit)
-      .map((column) => `${column.text.id}:${column.lit.dataset.index}`);
-    if (places.length) history.replaceState(null, '', `#${places.join(',')}`);
+      .map((column) => `${column.shown.text.id}:${column.lit.dataset.index}`);
+    for (const [name, node] of Object.entries(SCREENS)) {
+      if (!node().hidden) parts.push(name);
+    }
+    if (parts.length) history.replaceState(null, '', `#${parts.join(',')}`);
   }, 300);
+}
+
+/** The screen the URL asks for, if it asks for one. */
+function readScreen() {
+  const parts = decodeURIComponent(location.hash.slice(1)).split(',');
+  return Object.keys(SCREENS).find((name) => parts.includes(name)) || null;
 }
 
 function readPlaces() {
   const found = [];
+  // One book per column: a link naming two books of the same tradition would
+  // otherwise have them open into the same column and race each other.
+  const taken = new Set();
   for (const part of decodeURIComponent(location.hash.slice(1)).split(',')) {
+    // Screen names ride in the same list and carry no colon; they fall out
+    // here because byId has nothing under them.
     const [id, at] = part.split(':');
-    if (byId[id] && /^\d+$/.test(at || '')) {
-      found.push([byId[id], Math.min(Number(at), byId[id].count - 1)]);
+    const text = byId[id];
+    if (text && /^\d+$/.test(at || '') && !taken.has(text.tradition)) {
+      taken.add(text.tradition);
+      found.push([text, Math.min(Number(at), text.count - 1)]);
     }
   }
   return found;
@@ -707,13 +1021,23 @@ function readPlaces() {
 async function start() {
   // Land on the passage, not near it: measure only once the real face is in.
   await document.fonts.ready.catch(() => {});
-  const manifest = await fetch('data/manifest.json').then((r) => r.json());
+  const manifest = await fetch('data/manifest.json', FRESH)
+    .then((r) => r.json());
   texts = manifest.texts;
+  traditions = manifest.traditions;
   byId = Object.fromEntries(texts.map((t) => [t.id, t]));
-  for (const text of texts) columns.set(text.id, buildColumn(text));
+  for (const tradition of traditions) {
+    columns.set(tradition.id, buildColumn(tradition));
+  }
 
+  // A link naming one book opens that book alone: its tradition's column, held
+  // to that book so a jump stays inside it.
   const places = readPlaces();
-  if (places.length === 1) mode = places[0][0].id;
+  if (places.length === 1) {
+    const [text] = places[0];
+    mode = text.tradition;
+    columnFor(text).only = text;
+  }
 
   buildNav();
   buildSources();
@@ -765,10 +1089,16 @@ async function start() {
   if (places.length) {
     const token = ++generation;
     await Promise.all(
-      places.map(([text, at]) => open(columns.get(text.id), at, token)));
+      places.map(([text, at]) => open(columnFor(text), text, at, token)));
   } else {
     await jump();
   }
+
+  // Last, so that the passages landing underneath cannot write the screen back
+  // out of the URL: both share one debounce, and whoever calls it last wins.
+  const screen = readScreen();
+  if (screen === 'statistics') showStats(true);
+  else if (screen === 'sources') showSources(true);
 }
 
 start().catch((error) => {

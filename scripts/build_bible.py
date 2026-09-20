@@ -51,10 +51,10 @@ def build():
     return [
         write_text('old-testament', 'The Old Testament', 'Old Testament',
                    'King James Version',
-                   SOURCE, LICENSE, collect(OLD)),
+                   SOURCE, LICENSE, collect(OLD), tradition='judaism'),
         write_text('new-testament', 'The New Testament', 'New Testament',
                    'King James Version',
-                   SOURCE, LICENSE, collect(NEW)),
+                   SOURCE, LICENSE, collect(NEW), tradition='christianity'),
     ]
 
 

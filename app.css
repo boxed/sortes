@@ -9,6 +9,7 @@
   --fade-3: #b3b1a7;
   --rubric: #a32b1b;
   --rule: #c3bfb1;
+  --rule-faint: #d5d1c4;
 
   /* Three illuminator's pigments, in fixed slots, taken as saturated as the
      checks allow: a search over OKLCH hue/lightness for the highest common
@@ -26,6 +27,7 @@
   --violence: #b8440a;  /* realgar */
   --doctrine: #177a63;  /* verdigris */
   --worship: #82358f;   /* Tyrian purple */
+  --provenance: #6b6257; /* oak gall, the ink of a colophon */
 
   --measure: 34rem;
   --margin-gutter: 14.5rem; /* running head, mark strip and their gaps */
@@ -43,6 +45,7 @@
     --fade-3: #454440;
     --rubric: #d65c42;
     --rule: #2f3335;
+    --rule-faint: #24282a;
     /* CVD dE 11.4, normal-vision dE 23.6, contrast 3.8/5.3/3.3. The old
        threat was a pale pink here; madder is a red. */
     --law: #0077cd;
@@ -51,6 +54,7 @@
     --violence: #e2622a;
     --doctrine: #1f9c7e;
     --worship: #b062c4;
+    --provenance: #9a8f80;
   }
 }
 
@@ -73,7 +77,13 @@ body {
 
 /* ---- the spread ------------------------------------------------------ */
 
+/* The spread and both screens share the body grid's first row, stacked by
+   z-index; the toolbar has the second to itself. Every placement is stated,
+   because auto-placement would otherwise push the spread out of the cell the
+   screens have claimed and into the toolbar's row. */
 .grid {
+  grid-row: 1;
+  grid-column: 1;
   display: grid;
   align-content: start;
   overflow: hidden;
@@ -128,9 +138,19 @@ body {
    when one book's citation needs two lines and its neighbours need one. */
 .head {
   flex: 0 0 auto;
-  height: 5.4rem;
+  height: 6.5rem;
   overflow: hidden;
-  padding: 1.1rem 1.25rem 0.9rem;
+  padding: 1.05rem 1.25rem 0.9rem;
+}
+
+/* The column's own name. The book beneath it is swapped out on every jump, so
+   this is the only fixed thing in the head. Italic and faint: it is marginalia
+   about the column, and you read it once and then stop needing it. */
+.head-where {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--fade-3);
 }
 
 .head-book {
@@ -309,6 +329,8 @@ body {
 /* ---- controls -------------------------------------------------------- */
 
 .bar {
+  grid-row: 2;
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 0.6rem 1.5rem;
@@ -329,10 +351,23 @@ body {
 
 .books {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 1.1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   flex: 1 1 auto;
 }
+
+/* Traditions on the first row; when one is chosen, the books it holds on the
+   second. The second row is set back and smaller — it is a choice within the
+   choice above it, not a peer of it. */
+.nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 1.1rem;
+}
+
+.nav-row + .nav-row { padding-left: 0.9rem; }
+.nav-row + .nav-row button { font-size: 0.8rem; font-style: italic; }
 
 .books button {
   padding: 0.15rem 0;
@@ -443,11 +478,18 @@ kbd {
 
 /* ---- sources --------------------------------------------------------- */
 
+/* Both screens sit in the body grid's first row — the same cell the spread
+   occupies — rather than over the whole viewport. That leaves the toolbar row
+   untouched and always clickable, so the button that opened a screen is the
+   button that closes it. Offsetting a fixed overlay by --bar-height would not
+   do: that is a min-height, and the bar grows to two rows as soon as a
+   tradition's books are listed or the screen is narrow. */
 .sources {
-  position: fixed;
-  inset: auto 0 var(--bar-height) 0;
+  grid-row: 1;
+  grid-column: 1;
+  align-self: end;
   z-index: 30;
-  max-height: 72svh;
+  max-height: 100%;
   overflow-y: auto;
   padding: 2rem 1.25rem 2.5rem;
   background: var(--ground-bar);
@@ -509,8 +551,9 @@ kbd {
 /* Statistics: a full screen, one column per book, everything aligned so the
    books can be read against each other rather than one at a time. */
 .screen {
-  position: fixed;
-  inset: 0;
+  grid-row: 1;
+  grid-column: 1;
+  min-height: 0;
   z-index: 40;
   overflow: auto;
   background: var(--ground);
@@ -535,13 +578,76 @@ kbd {
   font-weight: 400;
 }
 
-.screen .lede { max-width: 46rem; margin-bottom: 1.75rem; }
+.screen .lede { max-width: 46rem; margin-bottom: 0.9rem; }
 
+.quiet-note {
+  font-size: 0.85rem;
+  color: var(--fade-1);
+  margin-bottom: 1.75rem;
+}
+
+/* Sits in the screen head beside Close, quiet enough not to compete with the
+   title but plain enough to be found. */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--fade-1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle:hover { color: var(--ink); }
+.toggle input { accent-color: var(--rubric); cursor: pointer; }
+
+/* The books stand side by side, grouped under their tradition. Grouping runs
+   across rather than down because a row of Law reading straight across all
+   fifteen books is the comparison the screen exists for; stacking traditions
+   would put Judaism and Buddhism on different screenfuls and there would be
+   nothing to compare. The column is narrow enough that a desktop holds every
+   book at once, and scrolls sideways rather than dropping any when it cannot. */
+.matrix-set {
+  --book-width: clamp(7rem, 11vw, 12rem);
+}
+
+/* One rule between traditions, down the whole height. The books inside a
+   tradition are divided in the map itself, by a band of ground, so they need
+   no rule here. */
+.book, .cell {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.9rem;
+}
+
+/* Nothing to divide at the left edge. Marked in script: nth-child counts
+   every cell in the grid, so it would slide the moment a row gained one. */
+[data-edge] { border-left: 0; padding-left: 0; }
+
+/* A book column is a fixed width rather than a share of the row, so the
+   fifteen columns keep one rhythm however the window is sized. The column gap
+   is small: the rule at each tradition boundary does the separating, and wide
+   gutters would push the far books off the screen for nothing. */
 .matrix {
   display: grid;
-  grid-template-columns: max-content repeat(var(--books), minmax(0, 1fr));
+  grid-template-columns: max-content repeat(var(--books), var(--book-width));
+  justify-content: start;
   align-items: start;
-  gap: 0.3rem 2.25rem;
+  gap: 0.3rem 1.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/* Forcing every label back to the first column is what breaks the row after
+   the label rather than letting the next row's cells run on beside it. Sticky,
+   so the kind names stay readable while a wide block slides past them. */
+.corner, .kind {
+  grid-column: 1;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--ground);
 }
 
 /* The maps sit on a common baseline just above the bars — their heights still
@@ -557,13 +663,24 @@ kbd {
   display: block;
   font-weight: 400;
   font-size: 0.95rem;
+  line-height: 1.25;
   color: var(--ink);
+}
+
+/* Which books run down this column's map, in the order they run. */
+.parts {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.66rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--fade-3);
 }
 
 .book span {
   display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.66rem;
   color: var(--fade-2);
 }
 
@@ -575,15 +692,18 @@ kbd {
   display: block;
   width: 100%;
   height: auto;
+  /* Bottom-aligned, so every map sits on one baseline just above the bars and
+     the grain still says how long each book is. Not capped: a long book is
+     allowed to be long, and one pixel is always one passage. */
   margin-top: auto;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1rem;
   image-rendering: pixelated;
 }
 
 .kind {
   align-self: center;
-  padding-right: 0.5rem;
-  font-size: 0.85rem;
+  padding-right: 0.8rem;
+  font-size: 0.82rem;
   color: var(--fade-1);
 }
 
@@ -606,23 +726,24 @@ kbd {
 .kind[data-code='V'] { --mark: var(--violence); }
 .kind[data-code='D'] { --mark: var(--doctrine); }
 .kind[data-code='W'] { --mark: var(--worship); }
+.kind[data-code='A'] { --mark: var(--provenance); }
 
 /* The number sits at the end of its own bar, not at the right edge of the
    cell: pinned to the edge it ends up nearer the next book's bar than its own,
    and reads as labelling that one. The bar is scaled against the column minus
    the label, so the longest one still leaves room for it. */
 .cell {
-  --figure: 2.5rem;
+  --figure: 2.4rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
   min-width: 0;
-  padding: 0.18rem 0;
+  padding: 0.14rem 0;
 }
 
 /* Not `.bar` — that is the toolbar at the foot of the page. */
 .share {
-  height: 8px;
+  height: 7px;
   min-width: 1px;
   flex: none;
   border-radius: 1px;
@@ -635,11 +756,12 @@ kbd {
 .share[data-code='V'] { background: var(--violence); }
 .share[data-code='D'] { background: var(--doctrine); }
 .share[data-code='W'] { background: var(--worship); }
+.share[data-code='A'] { background: var(--provenance); }
 
 .cell b {
   flex: none;
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   color: var(--fade-1);
 }
@@ -649,6 +771,17 @@ kbd {
   color: var(--fade-2);
   font-style: italic;
 }
+
+/* The source list is grouped the way the spread is, so it answers "what is in
+   the Islam column" as well as "where did this text come from". */
+.sources dt.sources-where {
+  margin-top: 1.8rem;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--rubric);
+}
+
+.sources dt.sources-where:first-child { margin-top: 0; }
 
 .screen .colophon { margin-top: 2rem; }
 
@@ -660,18 +793,8 @@ kbd {
   .screen-head, .screen .lede, .screen .colophon {
     padding-inline: 1rem;
   }
-  .matrix {
-    grid-template-columns: max-content repeat(var(--books), 8.5rem);
-    overflow-x: auto;
-    padding-inline: 1rem;
-    overscroll-behavior-x: contain;
-  }
-  .corner, .kind {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--ground);
-  }
+  .matrix-set { --book-width: 8.5rem; }
+  .matrix { padding-inline: 1rem; }
 }
 
 /* Isolating a kind. Colour alone cannot separate five hues for every kind of
@@ -691,15 +814,18 @@ kbd {
 .kind:hover, .kind:focus-visible { color: var(--ink); }
 .kind:focus-visible { outline: 2px solid var(--rubric); outline-offset: 2px; }
 
-.matrix[data-isolate] .share,
-.matrix[data-isolate] .cell b,
-.matrix[data-isolate] .kind { opacity: 0.25; }
+/* Provenance is hidden unless the box in the screen head is ticked. */
+.matrix-set:not([data-frame]) [data-frame] { display: none; }
 
-.matrix[data-isolate] .row-on .share,
-.matrix[data-isolate] .row-on b,
-.matrix[data-isolate] .kind.row-on { opacity: 1; }
+.matrix-set[data-isolate] .share,
+.matrix-set[data-isolate] .cell b,
+.matrix-set[data-isolate] .kind { opacity: 0.25; }
 
-.matrix[data-isolate] .kind.row-on { font-style: normal; color: var(--ink); }
+.matrix-set[data-isolate] .row-on .share,
+.matrix-set[data-isolate] .row-on b,
+.matrix-set[data-isolate] .kind.row-on { opacity: 1; }
+
+.matrix-set[data-isolate] .kind.row-on { font-style: normal; color: var(--ink); }
 
 /* Reading one pixel. Follows the cursor, so it is kept narrow enough to stay
    out of the way of the map it is pointing at. */
@@ -732,5 +858,42 @@ kbd {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* What the passage was labelled, under the passage itself. Each kind carries
+   the same colored mark it has in the row of kinds above, so the pixel, the
+   bar and the card all name a thing the same way. */
+.peek-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  margin: 0.5rem 0 0;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.72rem;
+  color: var(--fade-1);
+}
+
+.peek-kinds i { font-style: normal; }
+
+.peek-kinds i[data-code]::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 0.8em;
+  margin-right: 0.35rem;
+  border-radius: 2px;
+  vertical-align: -0.05em;
+  background: var(--mark, var(--fade-2));
+}
+
+.peek-kinds i[data-code='L'] { --mark: var(--law); }
+.peek-kinds i[data-code='P'] { --mark: var(--promise); }
+.peek-kinds i[data-code='T'] { --mark: var(--threat); }
+.peek-kinds i[data-code='V'] { --mark: var(--violence); }
+.peek-kinds i[data-code='D'] { --mark: var(--doctrine); }
+.peek-kinds i[data-code='W'] { --mark: var(--worship); }
+.peek-kinds i[data-code='A'] { --mark: var(--provenance); }
+
+.peek-kinds .nothing { font-style: italic; color: var(--fade-2); }
 
 .map { cursor: crosshair; }

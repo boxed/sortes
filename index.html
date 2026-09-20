@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sortes — six scriptures, opened at random</title>
-<meta name="description" content="The Old and New Testaments, the Quran, the Book of Mormon, the Bhagavad Gita and the Pali Canon, all open at a random passage at once.">
+<title>Sortes — six traditions, opened at random</title>
+<meta name="description" content="Judaism, Christianity, Islam, Mormonism, Hinduism and Buddhism side by side, each fallen open at a random passage of one of its scriptures.">
 <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'&gt;&lt;rect width='16' height='16' fill='%23e3e1d8'/&gt;&lt;rect x='3' y='7' width='10' height='2' fill='%23a32b1b'/&gt;&lt;/svg&gt;">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,22 +36,32 @@
   <div class="screen-inner">
     <header class="screen-head">
       <h2>What each book spends its words on</h2>
+      <label class="toggle">
+        <input type="checkbox" id="stats-provenance" checked>
+        Exclude provenance
+      </label>
       <button id="stats-close" class="plain" type="button">Close</button>
     </header>
-    <p class="lede">Every passage of all six books, in reading order, one pixel
-    each, colored by what it does &mdash; narrative alone is left as ground,
-    since it is the commonest kind in four of the six and coloring it would
-    leave the rest nothing to stand against. Each map is squared off and scaled
-    to its column, so a short book gets larger pixels rather than a thin strip:
-    the grain tells you how long the book is. Below each map, the share of that
-    book's passages carrying each kind, all six on one scale. A passage can do
-    more than one thing, so the shares do not add to a hundred. Hover a kind to
-    see only that kind, or a pixel to read the passage.</p>
-    <div id="stats-body" class="matrix"></div>
+    <p class="lede">One column per tradition, every passage of its scriptures
+    one pixel, colored by what it does. A tradition holding several books
+    stacks them down the column with a band between: the Quran above the six
+    hadith collections, the Vinaya above the five nikayas. Narrative is left as
+    ground, being the commonest kind in most of them. Below each map, the share
+    carrying each kind &mdash; every bar on one scale, so a row compares the six
+    straight across, and a passage can do more than one thing, so they do not
+    add to a hundred. Hover a kind to see only that kind, or a pixel to read the
+    passage and what it was labelled.</p>
+    <p class="lede quiet-note"><b>Provenance</b> &mdash; a hadith's chain of
+    narrators, the <i>Thus have I heard</i> opening a sutta &mdash; says how a
+    passage reached you, not what it does, and nearly every hadith has one. It
+    is excluded by default, and excluded rather than hidden: a passage that is
+    nothing <em>but</em> a chain leaves the count and the map altogether.</p>
+    <div id="stats-body" class="matrix-set"></div>
     <p class="colophon" id="stats-note"></p>
     <div id="peek" class="peek" role="status" aria-live="polite" hidden>
       <p class="peek-ref"></p>
       <p class="peek-body"></p>
+      <p class="peek-kinds"></p>
     </div>
   </div>
 </aside>
@@ -59,11 +69,14 @@
 <aside id="sources" class="sources" hidden>
   <div class="sources-inner">
     <button id="sources-close" class="plain close" type="button">Close</button>
-    <h2>Six scriptures, opened at random</h2>
-    <p class="lede">Every book here falls open on a passage chosen at random.
-    Whatever passage sits on a column's reading line keeps its ink; the rest of
-    the page fades around it. Scroll a column to move its light, or open all six
-    somewhere new.</p>
+    <h2>Six traditions, opened at random</h2>
+    <p class="lede">A column is a tradition, not a book. Islam has seven books
+    on the shelf here and Judaism one, and each jump takes one of them down and
+    opens it at a passage chosen at random &mdash; so the Islam column falls
+    open sometimes on the Quran and sometimes on Bukhari. Whatever passage sits
+    on a column's reading line keeps its ink; the rest of the page fades around
+    it. Scroll a column to move its light, or open all six somewhere new. Drop
+    to a single tradition and you can ask for one of its books by name.</p>
     <dl id="sources-list"></dl>
     <h2 class="sub">The marks in the margin</h2>
     <p class="lede">Each passage is labelled by what it does. Five of those
@@ -79,9 +92,11 @@
     form, not anyone's doctrine, and they are wrong often enough to be worth
     checking against the passage beside them.</p>
     <p class="colophon">Press <kbd>R</kbd> to open every book somewhere new.
-    Every translation here is public domain or CC0. Nothing is
-    edited beyond joining the hard-wrapped lines of the source files back into
-    paragraphs.</p>
+    Every translation here is public domain or CC0 except the hadith, whose
+    standard English versions are twentieth century and of uncertain status;
+    they are included because the alternative was an Islam column with one book
+    in it. Nothing is edited beyond joining the hard-wrapped lines of the source
+    files back into paragraphs.</p>
   </div>
 </aside>
 

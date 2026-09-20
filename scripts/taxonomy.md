@@ -5,11 +5,13 @@ form and rhetorical force — not by its subject matter and not by whether you
 agree with it. This is ordinary literary form-criticism, the same sorting a
 scholar of any of these traditions would recognize.
 
-Seven codes. Assign a code only when that force is clearly present in the
-passage itself, not implied by context you are inferring.
+Seven codes for what the passage does, and an eighth for how it reached you.
+Assign a code only when that force is clearly present in the passage itself,
+not implied by context you are inferring.
 
 **How many codes.** As many as are genuinely there, and no more. One is the
-common case and two is frequent; three is rare, and a fourth is never allowed.
+common case and two is frequent; three is rare, and a fifth is never allowed —
+four of the seven plus provenance is the ceiling.
 Do not pad a passage out to a second code, and do not squeeze a passage that is
 plainly doing two things down to one. A long passage does not earn more codes
 than a short one.
@@ -23,6 +25,30 @@ than a short one.
 | `N` | Narrative | recounts events. Someone did or said something at some time. Includes speech reported inside a story. |
 | `D` | Doctrine | explains how things are: the nature of God, self, world, karma, sin, salvation. Similes and parables used to explain. Moral reasoning that stops short of a direct command. |
 | `W` | Worship | addresses or adores the divine: hymn, psalm, prayer, invocation, praise, doxology, confession, blessing formula. |
+| `A` | Provenance | says how it was transmitted: a chain of narrators, an attribution formula, "Thus have I heard". |
+
+## Provenance, and judging past the frame
+
+`A` is not one of the seven. The others say what a passage *does*; `A` says how
+it got to you — the isnad on a hadith, the formula opening a sutta. It is asked
+separately and left out of the statistics unless asked for.
+
+**Judge the substance, not the frame that carries it.** "Narrated Abu Huraira:",
+"It was narrated from Ja'far from his father that", "Thus have I heard" and
+"the Prophet said" are the frame: they say who passed this on and who is being
+quoted. What the passage does is whatever is said or done inside that frame.
+
+| Passage | Codes | Why |
+| --- | --- | --- |
+| "Narrated Abu Huraira: the Prophet said, 'Whoever believes in Allah and the Last Day should not hurt his neighbour.'" | `LA` | A prohibition, carried by a chain. Not narrative: nothing happened. |
+| "Narrated 'Umar: I heard the Messenger saying, 'The reward of deeds depends upon the intentions.'" | `DA` | An explanation, carried by a chain. |
+| "Narrated Anas: Once the people of Medina suffered from drought, and he prayed for rain." | `NA` | An occasion really is recounted inside the frame. |
+| "This hadith is narrated on the authority of Zuhri with the same chain of transmitters." | `A` | The chain is all there is. Not blank — it does say how it came down. |
+
+Without this rule a hadith is narrative by construction, because it always
+reports that somebody said something at some time. Counted that way the six
+collections came out 81 to 96 per cent narrative, which described their grammar
+and not their content.
 
 ## The mistake to avoid
 

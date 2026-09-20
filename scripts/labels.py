@@ -14,6 +14,7 @@ no separate state to get out of step with the filesystem.
 """
 import json
 import os
+import re
 import sys
 
 from common import DATA
@@ -26,27 +27,51 @@ CODES = {
     'D': 'Doctrine',
     'W': 'Worship',
     'V': 'Violence',
+    'A': 'Provenance',
 }
 
-# Seven codes, and the threat/violence split means a warned-of atrocity in a
-# story can legitimately carry four: narrative, threat, violence, and the law
-# it enforces.
-MAX_CODES = 4
+# Provenance is the odd one out and is kept apart from the other seven. It does
+# not say what a passage does; it says how the passage reached you — the chain
+# of narrators on a hadith, the "Thus have I heard" that opens a sutta. Nearly
+# every hadith carries one, so counting the frame alongside the substance made
+# the six collections look like almost nothing but narrative. The other seven
+# now judge what is being transmitted, and this records that a transmission is
+# being claimed at all.
+FRAME = 'A'
 
-# A worker that loses the thread stops labelling rather than labelling badly.
-# Genuine registers (Ezra's census rolls) run to about a quarter empty; past
-# this it is the worker, not the text, and the chunk goes back in the queue.
-MAX_EMPTY = 0.4
+# The threat/violence split means a warned-of atrocity in a story can
+# legitimately carry four — narrative, threat, violence, and the law it
+# enforces — and a hadith reporting one carries provenance on top.
+MAX_CODES = 5
 
-# Smallest first, so whole texts finish early rather than everything finishing
-# at once at the end.
-ORDER = ['bhagavad-gita', 'quran', 'book-of-mormon', 'new-testament',
-         'old-testament', 'tripitaka']
+# Blank is a real answer, and some registers are mostly blank by right: the
+# Chronicler's levite rosters, Ezra's census, a hadith carrying an isnad and no
+# matn. So the guard does not count blanks — it counts blanks on passages that
+# plainly assert something, which is the shape of a classifier that skipped
+# work rather than a text that carries no form. suspect() below decides which
+# is which, and it is a heuristic, not an oracle.
+#
+# Set where wholesale failure lives rather than where the cleanest chunk sits.
+# Real failures ran past half: the Vinaya's taxonomies came back near 50% when
+# the Doctrine question could not see them. The list-heaviest chunks in the
+# corpus that are genuinely list-heavy — Joshua's tally of defeated kings at
+# old-testament/0015, and 1 Chronicles' genealogies at old-testament/0026 —
+# sit at 29% and 36%, and "The king of Jericho, one; the king of Ai, one" is
+# correctly blank however it is counted. Tightening the number below those
+# would reject good work to catch nothing.
+MAX_UNREAD = 0.45
 
 
 def manifest():
     with open(os.path.join(DATA, 'manifest.json')) as f:
         return {t['id']: t for t in json.load(f)['texts']}
+
+
+def order():
+    """Every text, smallest first, so whole texts finish early rather than
+    everything finishing at once at the end."""
+    texts = manifest()
+    return sorted(texts, key=lambda text_id: texts[text_id]['count'])
 
 
 def chunk_count(text):
@@ -140,9 +165,13 @@ def validate(text_id, number):
             if code not in CODES:
                 return f'index {i}: {code!r} is not a code'
 
-    empty = sum(1 for entry in got if not entry) / len(got)
-    if empty > MAX_EMPTY:
-        return f'{empty:.0%} of passages left unlabelled — worker lost the thread'
+    with open(source) as f:
+        rows = json.load(f)
+    missed = sum(1 for entry, row in zip(got, rows)
+                 if not entry and suspect(row[1])) / len(got)
+    if missed > MAX_UNREAD:
+        return (f'{missed:.0%} of passages assert something and came back '
+                f'blank — the chunk was not read')
     return None
 
 
@@ -151,6 +180,51 @@ def validate(text_id, number):
 # replies, and the Pali elision fragments that stand in for a repeated formula.
 # A blank that is a full sentence with no elision mark is none of those.
 MIN_ASSERTION = 40
+
+# A roll of names — the Chronicler's levites, Numbers' tribal heads — is a list
+# however long it runs, and carries none of the seven. So is a hadith that
+# records only who passed it on.
+ROSTER = re.compile(r'^(And )?(of|the sons of|the children of|Of the)\b',
+                    re.I)
+ISNAD = re.compile(r'^(This|Another|There is another) (hadith|chain)\b|'
+                   r'^It has been (narrated|transmitted|reported) on the '
+                   r'authority of .{0,60}(chain|same|similar)', re.I)
+
+# The rest of the rolls do not open with a tell, they just read like one:
+# "And at Bilhah, and at Ezem, and at Tolad", "Shallum his son, Mibsam his
+# son", "The king of Jericho, one; the king of Ai, one". What marks them is
+# shape rather than vocabulary — a run of short fragments, most carrying a
+# name. Counting capitals instead was tried and could not tell those from "And
+# Moses said unto the LORD, See, thou sayest unto me", which the King James
+# capitalises four times in thirteen words.
+FRAGMENT = re.compile(r'[,;]|\band\b')
+WORD = re.compile(r"[A-Za-z][A-Za-z'\u2019-]*")
+LIST_RUN = 3        # fragments before a sentence starts to read as a list
+LIST_SHARE = 0.6    # how many of them have to look like an entry
+ENTRY_WORDS = 4     # an entry is short; a clause is not
+
+
+def roster(body):
+    """True when a passage is a roll of names rather than a statement."""
+    parts = [FRAGMENT.split(body)[0]] + FRAGMENT.split(body)[1:]
+    parts = [p for p in (p.strip() for p in parts) if p]
+    if len(parts) < LIST_RUN:
+        return False
+    # The passage's own first word is capitalised for being first, so a name
+    # has to turn up somewhere past it for the fragment to count as an entry.
+    opening = WORD.search(body)
+    opening = opening.group() if opening else ''
+    entries = 0
+    for i, part in enumerate(parts):
+        words = WORD.findall(part)
+        if not words or len(words) > ENTRY_WORDS:
+            continue
+        named = [w for w in words if w[0].isupper()]
+        if i == 0 and named and named[0] == opening:
+            named = named[1:]
+        if named:
+            entries += 1
+    return entries / len(parts) >= LIST_SHARE
 
 
 def unexplained(text_id, number):
@@ -171,6 +245,10 @@ def suspect(body):
     body = body.strip()
     if len(body) < MIN_ASSERTION:
         return False          # setting stub, bare reply, speaker tag
+    if ROSTER.match(body) or roster(body):
+        return False          # a roll of names asserts nothing about anything
+    if ISNAD.match(body):
+        return False          # a chain of transmitters with no hadith on it
     if '\u2026' in body or '...' in body:
         return False          # peyyala elision standing in for a formula
     if body.rstrip('\u201d\'"').endswith('?'):
@@ -190,7 +268,7 @@ def audit(limit):
     """Rank finished chunks by how many blanks have no structural excuse."""
     texts = manifest()
     rows = []
-    for text_id in ORDER:
+    for text_id in order():
         for number in range(chunk_count(texts[text_id])):
             missed = unexplained(text_id, number)
             if missed:
@@ -207,7 +285,7 @@ def pending():
     """Every chunk still to do, in the order they should be worked."""
     texts = manifest()
     todo = []
-    for text_id in ORDER:
+    for text_id in order():
         text = texts[text_id]
         for number in range(chunk_count(text)):
             if validate(text_id, number) is not None:
@@ -224,7 +302,7 @@ def status():
 
     done_all = 0
     total_all = 0
-    for text_id in ORDER:
+    for text_id in order():
         text = texts[text_id]
         total = chunk_count(text)
         done = total - outstanding.get(text_id, 0)

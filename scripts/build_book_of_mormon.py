@@ -93,7 +93,7 @@ def collect():
 def build():
     return [write_text('book-of-mormon', 'The Book of Mormon', 'Book of Mormon',
                        'Another Testament of Jesus Christ',
-                       SOURCE, LICENSE, collect())]
+                       SOURCE, LICENSE, collect(), tradition='mormonism')]
 
 
 if __name__ == '__main__':

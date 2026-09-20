@@ -30,7 +30,7 @@ def collect():
 def build():
     return [write_text('quran', 'The Quran', 'Quran',
                        'Translated by Marmaduke Pickthall',
-                       SOURCE, LICENSE, collect())]
+                       SOURCE, LICENSE, collect(), tradition='islam')]
 
 
 if __name__ == '__main__':
