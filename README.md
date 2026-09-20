@@ -42,7 +42,9 @@ plain JSON.
   is on one scale, so a row compares the six straight across. Hovering a kind
   leaves only that kind lit; hovering a pixel reads the passage it stands for —
   whichever book of the tradition it came from — and lists what it was
-  labelled, read off the same byte the pixel was drawn from.
+  labelled. **Exclude provenance**, ticked by default, drops the passages that
+  are nothing but a chain of narrators: off the map, and out of the totals the
+  shares are taken from.
 
 ## How it lays out
 
@@ -95,10 +97,11 @@ examples. The full reasoning, and where the labels are known to be weak, is in
 ## What each book spends its words on
 
 Share of each book's passages carrying each kind. A passage can do more than
-one thing, so rows do not add to a hundred; the last column is the share
-carrying none of the eight — setting formulas, name-lists, bare replies. The
-statistics screen folds these into one column per tradition; this is the
-per-book breakdown behind it.
+one thing, so rows do not add to a hundred, and the last column is the share
+carrying none of the eight — setting formulas, name-lists, bare replies.
+Provenance is the odd column: it says how a passage reached you rather than
+what it does, which is why it stands at 100% across the hadith, where every
+report carries its chain of narrators, and at nothing much anywhere else.
 
 | Tradition | Text | Law | Promise | Threat | Narrative | Doctrine | Worship | Violence | Provenance | none |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -123,29 +126,8 @@ per-book breakdown behind it.
 | Buddhism | Aṅguttara | 16% | 14% | 2% | 20% | 67% | 1% | 3% | 0% | 7% |
 | Buddhism | Khuddaka | 18% | 13% | 3% | 29% | 44% | 6% | 4% | 5% | 10% |
 
-**Provenance is the eighth and the statistics screen leaves it out.** It does
-not say what a passage does, only how it reached you: the chain of narrators on
-a hadith, the *Thus have I heard* that opens a sutta. Nearly every hadith
-carries one, so the other seven are judged on what is being transmitted rather
-than on the frame around it. **Exclude provenance** is ticked by default on the
-statistics screen, and it excludes rather than hides — a passage that is
-nothing but a chain of narrators leaves the corpus altogether, taking its pixel
-off the map and its weight out of every denominator. Untick it to see
-provenance as a kind of its own. The table above counts everything, so the
-screen's figures run a little higher than these: Islam's law is 41% here and
-43% there, because 2,001 chain-only passages are no longer in the divisor.
-
-That distinction is worth most of the hadith's figures. Counting the frame,
-Bukhari came out 96% narrative and Tirmidhi 92% — which described their grammar,
-since a hadith always reports that somebody said something at some time.
-Judging what is inside the frame puts them at 76% and 56%, and moves the
-difference into law and doctrine, which is what the collections are for.
-
-**These are a model's readings, not scholarship.** Every passage was judged by
-Jev against the same eight questions — see *Rebuilding the labels* — and they
-are wrong often enough to be worth checking against the passage beside them.
-`python3 scripts/labels.py audit` ranks chunks by blanks that look like
-sentences a classifier skipped.
+These are a model's readings and not scholarship. They are wrong often enough
+to be worth checking against the passage beside them.
 
 ## The texts
 
